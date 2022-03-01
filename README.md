@@ -1,4 +1,16 @@
-# Getting Started with Create React App
+# Patika HW4 - TodoApp
+
+This is patika react bootcamp's week 4 homework.
+
+## TODO
+
+- Add alert messages to Login/Register pages.
+
+```html
+<Alert severity="error">This is an error alert — check it out!</Alert>
+```
+
+## Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
