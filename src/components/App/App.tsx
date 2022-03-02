@@ -2,26 +2,21 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-// Styles
-import './App.css';
-
 // Components
 import LoginRegister from '../Login/LoginRegister';
 import Todo from '../Todo/Todo';
+import TodoList from '../TodoList/TodoList';
 
 // MUI
-import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
-import TextField from '@mui/material/TextField';
-import { Button } from '@mui/material';
-import FormControl from '@mui/material/FormControl';
-import Select, { SelectChangeEvent } from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import InputLabel from '@mui/material/InputLabel';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
-import Modal from '@mui/material/Modal';
+import {
+	Box,
+	Typography,
+	Button,
+	TextField,
+	SelectChangeEvent,
+	List,
+	Modal,
+} from '@mui/material';
 
 const style = {
 	position: 'absolute' as 'absolute',
@@ -35,7 +30,7 @@ const style = {
 	p: 4,
 };
 
-interface TodoInterface {
+export interface TodoInterface {
 	id: number;
 	userId: number;
 	title: string;
@@ -45,10 +40,15 @@ interface TodoInterface {
 	updatedAt: string;
 	createdAt: string;
 }
+
 export interface TodoAddInterface {
 	title: string;
 	categoryId: number;
 	statusId: number;
+}
+
+export interface TodoGetInterface {
+	apiToken: string;
 }
 
 export interface Category {
@@ -99,8 +99,6 @@ function App() {
 	// STATES
 	const [token, setToken] = useState<string>(() => getCookie('token') || '');
 	const [categories, setCategories] = useState<Category[]>([]);
-	const [categorySelect, setCategorySelect] = useState('');
-	const [categoryText, setCategoryText] = useState<string>('');
 	const [status, setStatus] = useState<Status[]>([]);
 	const [todoList, setTodoList] = useState<TodoInterface[]>([]);
 	const [open, setOpen] = useState(false);
@@ -113,6 +111,7 @@ function App() {
 		if (token) {
 			getCategories({ apiToken: token });
 			getStatus({ apiToken: token, categoryId: 2 });
+			getTodo({ apiToken: token });
 		}
 	}, [token]);
 
@@ -132,14 +131,6 @@ function App() {
 		}
 		return '';
 	}
-
-	const handleCategorySelectChange = (event: SelectChangeEvent) => {
-		setCategorySelect(event.target.value as string);
-	};
-
-	const handleStatusChange = (event: SelectChangeEvent) => {
-		// setStatus(event.target.value as string);
-	};
 
 	const handleCategorySubmit = (event: React.SyntheticEvent) => {
 		event.preventDefault();
@@ -292,7 +283,7 @@ function App() {
 			});
 	}
 
-	// Add Todo
+	// Todo Operations
 	function addTodo(todoData: TodoAddInterface): void {
 		const data = JSON.stringify(todoData);
 		axios
@@ -312,22 +303,25 @@ function App() {
 				console.log(`error code: ${error.response.status}`);
 				console.dir(error.response.data);
 			});
+	}
 
-		// setTodoList([
-		// 	...todoList,
-		// 	{
-		// 		id: Math.round(Math.random() * 1000),
-		// 		text: todoText,
-		// 		category: {
-		// 			id: Math.round(Math.random() * 1000),
-		// 			name: categorySelect,
-		// 			status: {
-		// 				id: Math.round(Math.random() * 1000),
-		// 				name: status,
-		// 			},
-		// 		},
-		// 	},
-		// ]);
+	function getTodo({ apiToken }: TodoGetInterface): void {
+		axios
+			.get('http://localhost:80/todo', {
+				headers: {
+					Authorization: `Bearer ${apiToken}`,
+				},
+			})
+			.then((response) => {
+				if (response.status === 200) {
+					const todos: TodoInterface[] = response.data;
+					setTodoList(todos);
+				}
+			})
+			.catch((error) => {
+				console.log(`error code: ${error.response.status}`);
+				console.dir(error.response.data);
+			});
 	}
 
 	return (
@@ -353,117 +347,18 @@ function App() {
 						statusList={status}
 					/>
 
-					<Typography variant="h2" gutterBottom component="h1">
-						Filtrele
-					</Typography>
-					<Box
-						component="form"
-						sx={{
-							'& .MuiTextField-root': { m: 1, width: '25ch' },
-						}}
-						noValidate
-						autoComplete="off"
-						// onSubmit={handleSubmit}
-					>
-						<FormControl sx={{ m: 1, minWidth: 120 }}>
-							<InputLabel id="demo-simple-select-label">Kategori</InputLabel>
-							<Select
-								labelId="demo-simple-select-label"
-								id="categorySelect"
-								value={categorySelect}
-								label="Kategori Sec"
-								onChange={handleCategorySelectChange}
-							>
-								{/* {categories.map((category) => (
-									<MenuItem value={category.id.toString()}>
-										{category.name}
-									</MenuItem>
-								))} */}
-							</Select>
-						</FormControl>
-						<FormControl sx={{ m: 1, minWidth: 120 }}>
-							<InputLabel id="demo-simple-select-label">Statu</InputLabel>
-							<Select
-								labelId="demo-simple-select-label"
-								id="statuSelect"
-								// value={status}
-								label="Statu Sec"
-								onChange={handleStatusChange}
-							>
-								<MenuItem value={10}>Statu 1</MenuItem>
-								<MenuItem value={20}>Statu 2</MenuItem>
-								<MenuItem value={30}>Statu 3</MenuItem>
-							</Select>
-						</FormControl>
-						<Button type="submit" variant="contained">
-							Filtrele
-						</Button>
-						<Button type="button" variant="outlined">
-							Filtreyi Temizle
-						</Button>
-					</Box>
-
-					<Typography variant="h2" gutterBottom component="h1">
-						Todo Listesi
-					</Typography>
-					<Box
-						sx={{
-							'& .MuiTextField-root': { m: 1, width: '25ch' },
-						}}
-					>
-						<List
-							sx={{ width: '100%', maxWidth: 360, bgcolor: 'background.paper' }}
-						>
-							{/* {todoList.map((todo) => (
-								<ListItem key={todo.id}>
-									<ListItemText
-										primary={`${todo.text} ${todo.category.name} ${
-											todo.category.status ? todo.category.status.name : ''
-										}`}
-									/>
-									<FormControl sx={{ m: 1, minWidth: 120 }}>
-										<InputLabel id="demo-simple-select-label">
-											Kategori
-										</InputLabel>
-										<Select
-											labelId="demo-simple-select-label"
-											id="categorySelect"
-											value={categorySelect}
-											label="Kategori Sec"
-											onChange={handleCategorySelectChange}
-										>
-											{categories.map((category) => (
-												<MenuItem value={todo.category.id.toString()}>
-													{todo.category.name}
-												</MenuItem>
-											))}
-										</Select>
-									</FormControl>
-									<FormControl sx={{ m: 1, minWidth: 120 }}>
-										<InputLabel id="demo-simple-select-label">Statu</InputLabel>
-										<Select
-											labelId="demo-simple-select-label"
-											id="statuSelect"
-											value={status}
-											label="Statu Sec"
-											onChange={handleStatusChange}
-										>
-											<MenuItem value={10}>
-												{todo.category.status ? todo.category.status.name : ''}
-											</MenuItem>
-										</Select>
-									</FormControl>
-								</ListItem>
-							))} */}
-						</List>
-					</Box>
+					<TodoList
+						todoList={todoList}
+						categoryList={categories}
+						statusList={status}
+					/>
 
 					<Button type="button" variant="contained" onClick={handleOpen}>
 						Kategorileri duzenle
 					</Button>
 
 					{/* Kategorileri Duzenleme Modali */}
-					<Modal
+					{/* <Modal
 						open={open}
 						onClose={handleClose}
 						aria-labelledby="modal-modal-title"
@@ -519,10 +414,10 @@ function App() {
 											<ListItemText primary={`${category.name}`} />
 										</ListItem>
 									))} */}
-								</List>
+					{/* </List>
 							</Box>
-						</Box>
-					</Modal>
+						</Box> */}
+					{/* </Modal> */}
 				</>
 			) : (
 				// LOGIN REGISTER
