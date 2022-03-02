@@ -1,9 +1,8 @@
 // Imports
 import React, { useState } from 'react';
-import { Login, Register } from '../../App';
+import { Login, Register } from '../App/App';
 
-// MUI
-import Typography from '@mui/material/Typography';
+// MUIs
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import { Button } from '@mui/material';

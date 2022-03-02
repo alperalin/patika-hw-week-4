@@ -6,7 +6,8 @@ import axios from 'axios';
 import './App.css';
 
 // Components
-import LoginRegister from './components/Login/LoginRegister';
+import LoginRegister from '../Login/LoginRegister';
+import Todo from '../Todo/Todo';
 
 // MUI
 import Typography from '@mui/material/Typography';
@@ -34,19 +35,55 @@ const style = {
 	p: 4,
 };
 
-interface Todo {
+interface TodoInterface {
 	id: number;
-	text: string;
-	category: Category;
+	userId: number;
+	title: string;
+	categoryId: number;
+	statusId: number;
+	done: boolean;
+	updatedAt: string;
+	createdAt: string;
+}
+export interface TodoAddInterface {
+	title: string;
+	categoryId: number;
+	statusId: number;
 }
 
-interface Category {
+export interface Category {
 	id: number;
-	name: string;
-	status?: {
-		id: number;
-		name: string;
-	};
+	userId: number;
+	title: string;
+	createdAt: string;
+	updatedAt: string;
+}
+
+interface CategoryOprProps {
+	apiToken: string;
+}
+
+interface CategoryAddProps extends CategoryOprProps {
+	title: Category['title'];
+}
+
+interface StatusCommon {
+	title: string;
+	categoryId: number;
+	color: string;
+}
+
+export interface Status extends StatusCommon {
+	id: number;
+}
+
+interface StatusAddProps extends StatusCommon {
+	apiToken: string;
+}
+
+interface StatusGetProps {
+	apiToken: string;
+	categoryId: number;
 }
 
 export interface Login {
@@ -61,15 +98,23 @@ export interface Register extends Login {
 function App() {
 	// STATES
 	const [token, setToken] = useState<string>(() => getCookie('token') || '');
-	const [categoryList, setCategoryList] = useState<Category[]>([]);
+	const [categories, setCategories] = useState<Category[]>([]);
 	const [categorySelect, setCategorySelect] = useState('');
 	const [categoryText, setCategoryText] = useState<string>('');
-	const [status, setStatus] = useState('');
-	const [todoList, setTodoList] = useState<Todo[]>([]);
-	const [todoText, setTodoText] = useState<string>('');
+	const [status, setStatus] = useState<Status[]>([]);
+	const [todoList, setTodoList] = useState<TodoInterface[]>([]);
 	const [open, setOpen] = useState(false);
 
-	useEffect(() => console.log(token), [token]);
+	useEffect(() => console.dir(categories), [categories]);
+	useEffect(() => console.dir(status), [status]);
+	useEffect(() => console.dir(todoList), [todoList]);
+
+	useEffect(() => {
+		if (token) {
+			getCategories({ apiToken: token });
+			getStatus({ apiToken: token, categoryId: 2 });
+		}
+	}, [token]);
 
 	// FUNCTIONS
 	function getCookie(cname: string): string {
@@ -93,41 +138,114 @@ function App() {
 	};
 
 	const handleStatusChange = (event: SelectChangeEvent) => {
-		setStatus(event.target.value as string);
-	};
-
-	const handleSubmit = (event: React.SyntheticEvent) => {
-		event.preventDefault();
-		setTodoList([
-			...todoList,
-			{
-				id: Math.round(Math.random() * 1000),
-				text: todoText,
-				category: {
-					id: Math.round(Math.random() * 1000),
-					name: categorySelect,
-					status: {
-						id: Math.round(Math.random() * 1000),
-						name: status,
-					},
-				},
-			},
-		]);
+		// setStatus(event.target.value as string);
 	};
 
 	const handleCategorySubmit = (event: React.SyntheticEvent) => {
 		event.preventDefault();
-		setCategoryList([
-			...categoryList,
-			{
-				id: Math.round(Math.random() * 1000),
-				name: categoryText,
-			},
-		]);
 	};
 
 	const handleOpen = () => setOpen(true);
 	const handleClose = () => setOpen(false);
+
+	// Category Operations
+	function addCategory({ apiToken, title }: CategoryAddProps): void {
+		const data = JSON.stringify({ title });
+
+		axios
+			.post('http://localhost:80/category', data, {
+				headers: {
+					Authorization: `Bearer ${apiToken}`,
+					'Content-Type': 'application/json',
+				},
+			})
+			.then((response) => {
+				if (response.status === 200) {
+					const category: Category = response.data;
+					setCategories((prev) => [...prev, category]);
+					addStatus({
+						apiToken,
+						title: 'Backlog',
+						categoryId: category.id,
+						color: 'purple',
+					});
+				}
+			})
+			.catch((error) => {
+				console.log(`error code: ${error.response.status}`);
+				console.dir(error.response.data);
+			});
+	}
+
+	function getCategories({ apiToken }: CategoryOprProps): void {
+		axios
+			.get('http://localhost:80/category', {
+				headers: {
+					Authorization: `Bearer ${apiToken}`,
+				},
+			})
+			.then((response) => {
+				if (response.status === 200) {
+					const categories: Category[] = response.data;
+					setCategories(categories);
+				}
+			})
+			.catch((error) => {
+				console.log(`error code: ${error.response.status}`);
+				console.dir(error.response.data);
+			});
+	}
+
+	// Status Operations
+	function addStatus({
+		title,
+		categoryId,
+		color,
+		apiToken,
+	}: StatusAddProps): void {
+		const data = JSON.stringify({ title, categoryId, color });
+
+		axios
+			.post('http://localhost:80/status', data, {
+				headers: {
+					Authorization: `Bearer ${apiToken}`,
+					'Content-Type': 'application/json',
+				},
+			})
+			.then((response) => {
+				if (response.status === 200) {
+					const status: Status = response.data;
+					setStatus((prev) => [...prev, status]);
+				}
+			})
+			.catch((error) => {
+				console.log(`error code: ${error.response.status}`);
+				console.dir(error.response.data);
+			});
+	}
+
+	function getStatus({ apiToken, categoryId }: StatusGetProps): void {
+		axios
+			// TODO: Liste cekileceginde kullanilacak
+			// .get(`http://localhost:80/status?categoryId=${categoryId}`,
+			.get(`http://localhost:80/status/${categoryId}`, {
+				headers: {
+					Authorization: `Bearer ${apiToken}`,
+				},
+			})
+			.then((response) => {
+				if (response.status === 200) {
+					// TODO: Liste cekileceginde kullanilacak
+					// const status: Status[] = response.data;
+					const status: Status = response.data;
+					setStatus([status]);
+				}
+			})
+			.catch((error) => {
+				console.log(`error code: ${error.response.status}`);
+				console.dir(error.response.data);
+			});
+	}
 
 	// Handle Login
 	function handleLogin(formData: Login): void {
@@ -140,16 +258,15 @@ function App() {
 			})
 			.then((response) => {
 				if (response.status === 200) {
-					const token = response.data.token;
-					document.cookie = `token=${token}`;
-					setToken(token);
+					const apiToken = response.data.token;
+					document.cookie = `token=${apiToken}`;
+					setToken(apiToken);
 				}
 			})
-			.catch((error) =>
-				console.log(
-					`error code: ${error.response.status} message: ${error.response.data}`
-				)
-			);
+			.catch((error) => {
+				console.log(`error code: ${error.response.status}`);
+				console.dir(error.response.data);
+			});
 	}
 
 	// Handle Register
@@ -163,16 +280,54 @@ function App() {
 			})
 			.then((response) => {
 				if (response.status === 200) {
-					const token = response.data.token;
-					document.cookie = `token=${token}`;
-					setToken(token);
+					const apiToken = response.data.token;
+					document.cookie = `token=${apiToken}`;
+					setToken(apiToken);
+					addCategory({ apiToken, title: 'General' });
 				}
 			})
-			.catch((error) =>
-				console.log(
-					`error code: ${error.response.status} message: ${error.response.data}`
-				)
-			);
+			.catch((error) => {
+				console.log(`error code: ${error.response.status}`);
+				console.dir(error.response.data);
+			});
+	}
+
+	// Add Todo
+	function addTodo(todoData: TodoAddInterface): void {
+		const data = JSON.stringify(todoData);
+		axios
+			.post('http://localhost:80/todo', data, {
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${token}`,
+				},
+			})
+			.then((response) => {
+				if (response.status === 200) {
+					const todo: TodoInterface = response.data;
+					setTodoList((prev) => [...prev, { ...todo, done: false }]);
+				}
+			})
+			.catch((error) => {
+				console.log(`error code: ${error.response.status}`);
+				console.dir(error.response.data);
+			});
+
+		// setTodoList([
+		// 	...todoList,
+		// 	{
+		// 		id: Math.round(Math.random() * 1000),
+		// 		text: todoText,
+		// 		category: {
+		// 			id: Math.round(Math.random() * 1000),
+		// 			name: categorySelect,
+		// 			status: {
+		// 				id: Math.round(Math.random() * 1000),
+		// 				name: status,
+		// 			},
+		// 		},
+		// 	},
+		// ]);
 	}
 
 	return (
@@ -191,63 +346,12 @@ function App() {
 						TodoList App
 					</Typography>
 
-					<Typography variant="h2" gutterBottom component="h1">
-						Todo Ekle
-					</Typography>
-					<Box
-						component="form"
-						sx={{
-							'& .MuiTextField-root': { m: 1, width: '25ch' },
-						}}
-						noValidate
-						autoComplete="off"
-						onSubmit={handleSubmit}
-					>
-						<TextField
-							id="todoInput"
-							label="Todo Metni"
-							placeholder="Todo Metni"
-							onChange={(event: any) => {
-								setTodoText(event.target.value);
-							}}
-							value={todoText}
-							required
-						/>
-						<FormControl sx={{ m: 1, minWidth: 120 }}>
-							<InputLabel id="demo-simple-select-label">Kategori</InputLabel>
-							<Select
-								labelId="demo-simple-select-label"
-								id="categorySelect"
-								value={categorySelect}
-								label="Kategori Sec"
-								onChange={handleCategorySelectChange}
-							>
-								{categoryList.map((category) => (
-									<MenuItem value={category.id.toString()}>
-										{category.name}
-									</MenuItem>
-								))}
-							</Select>
-						</FormControl>
-						<FormControl sx={{ m: 1, minWidth: 120 }}>
-							<InputLabel id="demo-simple-select-label">Statu</InputLabel>
-							<Select
-								labelId="demo-simple-select-label"
-								id="statuSelect"
-								value={status}
-								label="Statu Sec"
-								onChange={handleStatusChange}
-							>
-								<MenuItem value={10}>Statu 1</MenuItem>
-								<MenuItem value={20}>Statu 2</MenuItem>
-								<MenuItem value={30}>Statu 3</MenuItem>
-							</Select>
-						</FormControl>
-						<br />
-						<Button type="submit" variant="contained">
-							Ekle
-						</Button>
-					</Box>
+					{/* Todo */}
+					<Todo
+						onSubmit={addTodo}
+						categoryList={categories}
+						statusList={status}
+					/>
 
 					<Typography variant="h2" gutterBottom component="h1">
 						Filtrele
@@ -259,7 +363,7 @@ function App() {
 						}}
 						noValidate
 						autoComplete="off"
-						onSubmit={handleSubmit}
+						// onSubmit={handleSubmit}
 					>
 						<FormControl sx={{ m: 1, minWidth: 120 }}>
 							<InputLabel id="demo-simple-select-label">Kategori</InputLabel>
@@ -270,11 +374,11 @@ function App() {
 								label="Kategori Sec"
 								onChange={handleCategorySelectChange}
 							>
-								{categoryList.map((category) => (
+								{/* {categories.map((category) => (
 									<MenuItem value={category.id.toString()}>
 										{category.name}
 									</MenuItem>
-								))}
+								))} */}
 							</Select>
 						</FormControl>
 						<FormControl sx={{ m: 1, minWidth: 120 }}>
@@ -282,7 +386,7 @@ function App() {
 							<Select
 								labelId="demo-simple-select-label"
 								id="statuSelect"
-								value={status}
+								// value={status}
 								label="Statu Sec"
 								onChange={handleStatusChange}
 							>
@@ -310,7 +414,7 @@ function App() {
 						<List
 							sx={{ width: '100%', maxWidth: 360, bgcolor: 'background.paper' }}
 						>
-							{todoList.map((todo) => (
+							{/* {todoList.map((todo) => (
 								<ListItem key={todo.id}>
 									<ListItemText
 										primary={`${todo.text} ${todo.category.name} ${
@@ -328,7 +432,7 @@ function App() {
 											label="Kategori Sec"
 											onChange={handleCategorySelectChange}
 										>
-											{categoryList.map((category) => (
+											{categories.map((category) => (
 												<MenuItem value={todo.category.id.toString()}>
 													{todo.category.name}
 												</MenuItem>
@@ -350,7 +454,7 @@ function App() {
 										</Select>
 									</FormControl>
 								</ListItem>
-							))}
+							))} */}
 						</List>
 					</Box>
 
@@ -410,11 +514,11 @@ function App() {
 										bgcolor: 'background.paper',
 									}}
 								>
-									{categoryList.map((category) => (
+									{/* {categories.map((category) => (
 										<ListItem key={category.id}>
 											<ListItemText primary={`${category.name}`} />
 										</ListItem>
-									))}
+									))} */}
 								</List>
 							</Box>
 						</Box>
