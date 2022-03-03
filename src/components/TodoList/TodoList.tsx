@@ -14,20 +14,27 @@ import {
 } from '@mui/material';
 
 // Interface
-import { TodoInterface, Category, Status } from '../App/App';
+import { TodoInterface, Category, Status, StatusGetProps } from '../App/App';
 
 interface TodoListProps {
 	todoList: TodoInterface[];
 	categoryList: Category[];
 	statusList: Status[];
+	onGetStatus: ({ apiToken, categoryId }: StatusGetProps) => void;
 }
 
-function TodoList({ todoList, categoryList, statusList }: TodoListProps) {
+function TodoList({
+	todoList,
+	categoryList,
+	statusList,
+	onGetStatus,
+}: TodoListProps) {
 	const [categorySelect, setCategorySelect] = useState<string>('');
 	const [statusSelect, setStatusSelect] = useState<string>('');
 
 	const handleCategorySelectChange = (event: SelectChangeEvent) => {
 		setCategorySelect(event.target.value as string);
+		console.log(event.target.value as string);
 	};
 
 	const handleStatusChange = (event: SelectChangeEvent) => {
@@ -35,16 +42,12 @@ function TodoList({ todoList, categoryList, statusList }: TodoListProps) {
 	};
 
 	return (
-		<Box
-			sx={{
-				'& .MuiTextField-root': { m: 1, width: '25ch' },
-			}}
-		>
+		<Box component="div" sx={{ width: '100%', mb: 10 }}>
 			<Typography variant="h2" gutterBottom component="h1">
 				Todo Listesi
 			</Typography>
 
-			<List sx={{ width: '100%', maxWidth: 360, bgcolor: 'background.paper' }}>
+			<List sx={{ width: '100%', maxWidth: 800 }}>
 				{todoList.map((todo) => (
 					<ListItem key={todo.id}>
 						<ListItemText primary={todo.title} />
@@ -53,16 +56,18 @@ function TodoList({ todoList, categoryList, statusList }: TodoListProps) {
 							<Select
 								labelId="demo-simple-select-label"
 								id="categorySelect"
-								value={categorySelect}
 								label="Kategori Sec"
 								onChange={handleCategorySelectChange}
-								defaultValue={todo.categoryId.toString()}
+								defaultValue={`${todo.categoryId}`}
 							>
-								{/* {categories.map((category) => (
-								<MenuItem value={todo.category.id.toString()}>
-									{todo.category.name}
-								</MenuItem>
-							))} */}
+								{categoryList.map((category) => (
+									<MenuItem
+										key={category.id.toString()}
+										value={category.id.toString()}
+									>
+										{category.title}
+									</MenuItem>
+								))}
 							</Select>
 						</FormControl>
 						<FormControl required sx={{ m: 1, minWidth: 120 }}>
@@ -70,13 +75,11 @@ function TodoList({ todoList, categoryList, statusList }: TodoListProps) {
 							<Select
 								labelId="demo-simple-select-label"
 								id="statuSelect"
-								value={statusSelect}
 								label="Statu Sec"
 								onChange={handleStatusChange}
+								defaultValue={'10'}
 							>
-								<MenuItem value={10}>
-									{/* {todo.category.status ? todo.category.status.name : ''} */}
-								</MenuItem>
+								<MenuItem value={10}>test statu</MenuItem>
 							</Select>
 						</FormControl>
 					</ListItem>

@@ -11,9 +11,9 @@ import Select, { SelectChangeEvent } from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import InputLabel from '@mui/material/InputLabel';
 
-import { Category, TodoAddInterface, Status } from '../App/App';
-
 // Interfaces
+import { Category, TodoAddInterface, Status, StatusGetProps } from '../App/App';
+
 // TypeScript currentTarget icindeki elements'i tanimadigi
 // icin elements'i tanimlayan bir interface olusturuldu
 interface FormElements extends HTMLFormControlsCollection {
@@ -28,21 +28,35 @@ interface UserFormElements extends HTMLFormElement {
 interface TodoProps {
 	onSubmit: (todo: TodoAddInterface) => void;
 	categoryList: Category[];
-	statusList: Status[];
+	onCategoryChange: ({ apiToken, categoryId }: StatusGetProps) => any;
 }
 
-function Todo({ onSubmit, categoryList, statusList }: TodoProps) {
+// Component
+function Todo({ onSubmit, categoryList, onCategoryChange }: TodoProps) {
+	// States
 	const [categorySelect, setCategorySelect] = useState<string>('');
 	const [statusSelect, setStatusSelect] = useState<string>('');
+	const [statusList, setStatusList] = useState<Status[]>([]);
 
-	const handleCategorySelectChange = (event: SelectChangeEvent) => {
+	// Handle Category Selection
+	async function handleCategorySelectChange(event: SelectChangeEvent) {
 		setCategorySelect(event.target.value as string);
-	};
 
+		// Secilen kategoriye bagli statuleri al
+		const receivedStatus = await onCategoryChange({
+			categoryId: parseInt(event.target.value),
+		});
+
+		// Gelen statuleri state icerisine at.
+		setStatusList(receivedStatus);
+	}
+
+	// Handle Status Selection
 	const handleStatusChange = (event: SelectChangeEvent) => {
 		setStatusSelect(event.target.value as string);
 	};
 
+	// Handle Todo Submit
 	function handleSubmit(event: React.FormEvent<UserFormElements>): void {
 		event.preventDefault();
 		const todoText: string = event.currentTarget.elements.todoInput.value;
@@ -54,6 +68,7 @@ function Todo({ onSubmit, categoryList, statusList }: TodoProps) {
 		});
 	}
 
+	// Return Element
 	return (
 		<Box component="div" sx={{ width: '100%', mb: 10 }}>
 			<Typography variant="h2" gutterBottom component="h1">
@@ -94,16 +109,12 @@ function Todo({ onSubmit, categoryList, statusList }: TodoProps) {
 						label="Statu Sec"
 						onChange={handleStatusChange}
 					>
-						{categorySelect &&
-							statusList.map((status) =>
-								status.categoryId.toString() === categorySelect ? (
-									<MenuItem key={status.id} value={status.id.toString()}>
-										{status.title}
-									</MenuItem>
-								) : (
-									''
-								)
-							)}
+						{statusList.length &&
+							statusList.map((status) => (
+								<MenuItem key={status.id} value={status.id.toString()}>
+									{status.title}
+								</MenuItem>
+							))}
 					</Select>
 				</FormControl>
 				<br />

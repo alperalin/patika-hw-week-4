@@ -8,15 +8,7 @@ import Todo from '../Todo/Todo';
 import TodoList from '../TodoList/TodoList';
 
 // MUI
-import {
-	Box,
-	Typography,
-	Button,
-	TextField,
-	SelectChangeEvent,
-	List,
-	Modal,
-} from '@mui/material';
+import { Box, Typography, Button, Modal } from '@mui/material';
 
 const style = {
 	position: 'absolute' as 'absolute',
@@ -81,8 +73,8 @@ interface StatusAddProps extends StatusCommon {
 	apiToken: string;
 }
 
-interface StatusGetProps {
-	apiToken: string;
+export interface StatusGetProps {
+	apiToken?: string;
 	categoryId: number;
 }
 
@@ -110,7 +102,6 @@ function App() {
 	useEffect(() => {
 		if (token) {
 			getCategories({ apiToken: token });
-			getStatus({ apiToken: token, categoryId: 2 });
 			getTodo({ apiToken: token });
 		}
 	}, [token]);
@@ -215,27 +206,24 @@ function App() {
 			});
 	}
 
-	function getStatus({ apiToken, categoryId }: StatusGetProps): void {
-		axios
-			// TODO: Liste cekileceginde kullanilacak
-			// .get(`http://localhost:80/status?categoryId=${categoryId}`,
-			.get(`http://localhost:80/status/${categoryId}`, {
+	async function getStatus({ apiToken = token, categoryId }: StatusGetProps) {
+		// const status: Status[] = [];
+		const status: Status[] = await axios
+			.get(`http://localhost:80/status?categoryId=${categoryId}`, {
 				headers: {
 					Authorization: `Bearer ${apiToken}`,
 				},
 			})
 			.then((response) => {
 				if (response.status === 200) {
-					// TODO: Liste cekileceginde kullanilacak
-					// const status: Status[] = response.data;
-					const status: Status = response.data;
-					setStatus([status]);
+					return response.data;
 				}
 			})
 			.catch((error) => {
 				console.log(`error code: ${error.response.status}`);
 				console.dir(error.response.data);
 			});
+		return status;
 	}
 
 	// Handle Login
@@ -344,13 +332,14 @@ function App() {
 					<Todo
 						onSubmit={addTodo}
 						categoryList={categories}
-						statusList={status}
+						onCategoryChange={getStatus}
 					/>
 
 					<TodoList
 						todoList={todoList}
 						categoryList={categories}
 						statusList={status}
+						onGetStatus={getStatus}
 					/>
 
 					<Button type="button" variant="contained" onClick={handleOpen}>
