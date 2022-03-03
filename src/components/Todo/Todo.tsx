@@ -59,13 +59,19 @@ function Todo({ onSubmit, categoryList, onCategoryChange }: TodoProps) {
 	// Handle Todo Submit
 	function handleSubmit(event: React.FormEvent<UserFormElements>): void {
 		event.preventDefault();
-		const todoText: string = event.currentTarget.elements.todoInput.value;
+		const todoText = event.currentTarget.elements.todoInput;
 
+		// Todo verisi onSubmit uzerinden App component'ine gonderiliyor
 		onSubmit({
-			title: todoText,
+			title: todoText.value,
 			categoryId: parseInt(categorySelect),
 			statusId: parseInt(statusSelect),
 		});
+
+		// Input degerleri temizleniyor
+		todoText.value = '';
+		setCategorySelect('');
+		setStatusSelect('');
 	}
 
 	// Return Element

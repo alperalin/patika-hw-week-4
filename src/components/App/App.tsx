@@ -43,6 +43,11 @@ export interface TodoGetInterface {
 	apiToken: string;
 }
 
+export interface TodoUpdateInterface {
+	apiToken?: string;
+	todo: TodoInterface;
+}
+
 export interface Category {
 	id: number;
 	userId: number;
@@ -78,6 +83,11 @@ export interface StatusGetProps {
 	categoryId: number;
 }
 
+export interface StatusGetAllProps {
+	apiToken?: string;
+	categories: Category[];
+}
+
 export interface Login {
 	username: string;
 	password: string;
@@ -95,14 +105,10 @@ function App() {
 	const [todoList, setTodoList] = useState<TodoInterface[]>([]);
 	const [open, setOpen] = useState(false);
 
-	useEffect(() => console.dir(categories), [categories]);
-	useEffect(() => console.dir(status), [status]);
-	useEffect(() => console.dir(todoList), [todoList]);
-
 	useEffect(() => {
 		if (token) {
 			getCategories({ apiToken: token });
-			getTodo({ apiToken: token });
+			getAllTodo({ apiToken: token });
 		}
 	}, [token]);
 
@@ -170,6 +176,7 @@ function App() {
 				if (response.status === 200) {
 					const categories: Category[] = response.data;
 					setCategories(categories);
+					getAllStatus({ categories });
 				}
 			})
 			.catch((error) => {
@@ -207,7 +214,6 @@ function App() {
 	}
 
 	async function getStatus({ apiToken = token, categoryId }: StatusGetProps) {
-		// const status: Status[] = [];
 		const status: Status[] = await axios
 			.get(`http://localhost:80/status?categoryId=${categoryId}`, {
 				headers: {
@@ -224,6 +230,19 @@ function App() {
 				console.dir(error.response.data);
 			});
 		return status;
+	}
+
+	async function getAllStatus({
+		apiToken = token,
+		categories,
+	}: StatusGetAllProps) {
+		const receivedStatus = await Promise.all(
+			categories.map((category) => getStatus({ categoryId: category.id }))
+		);
+
+		receivedStatus.forEach((status) =>
+			setStatus((prev) => [...prev, ...status])
+		);
 	}
 
 	// Handle Login
@@ -293,17 +312,44 @@ function App() {
 			});
 	}
 
-	function getTodo({ apiToken }: TodoGetInterface): void {
+	function updateTodo({ apiToken = token, todo }: TodoUpdateInterface): void {
+		const data = JSON.stringify({
+			title: todo.title,
+			categoryId: todo.categoryId,
+			statusId: todo.statusId,
+		});
+
+		axios
+			.post(`http://localhost:80/todo/${todo.id}`, {
+				data,
+				headers: {
+					Authorization: `Bearer ${apiToken}`,
+					'Content-Type': 'application/json',
+				},
+			})
+			.then((response) => {
+				if (response.status === 200) {
+					console.log(response.data);
+					getAllTodo({ apiToken: token });
+				}
+			})
+			.catch((error) => {
+				console.log(`error code: ${error.response.status}`);
+				console.dir(error.response.data);
+			});
+	}
+
+	function getAllTodo({ apiToken }: TodoGetInterface): void {
 		axios
 			.get('http://localhost:80/todo', {
 				headers: {
 					Authorization: `Bearer ${apiToken}`,
 				},
 			})
-			.then((response) => {
+			.then(async (response) => {
 				if (response.status === 200) {
-					const todos: TodoInterface[] = response.data;
-					setTodoList(todos);
+					const receivedTodoList: TodoInterface[] = response.data;
+					setTodoList(receivedTodoList);
 				}
 			})
 			.catch((error) => {
@@ -339,7 +385,7 @@ function App() {
 						todoList={todoList}
 						categoryList={categories}
 						statusList={status}
-						onGetStatus={getStatus}
+						onTodoUpdate={updateTodo}
 					/>
 
 					<Button type="button" variant="contained" onClick={handleOpen}>
