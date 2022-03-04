@@ -28,7 +28,6 @@ export interface TodoInterface {
 	title: string;
 	categoryId: number;
 	statusId: number;
-	done: boolean;
 	updatedAt: string;
 	createdAt: string;
 }
@@ -303,7 +302,7 @@ function App() {
 			.then((response) => {
 				if (response.status === 200) {
 					const todo: TodoInterface = response.data;
-					setTodoList((prev) => [...prev, { ...todo, done: false }]);
+					setTodoList((prev) => [...prev, { ...todo }]);
 				}
 			})
 			.catch((error) => {
@@ -320,11 +319,29 @@ function App() {
 		});
 
 		axios
-			.post(`http://localhost:80/todo/${todo.id}`, {
-				data,
+			.put(`http://localhost:80/todo/${todo.id}`, data, {
 				headers: {
 					Authorization: `Bearer ${apiToken}`,
 					'Content-Type': 'application/json',
+				},
+			})
+			.then((response) => {
+				if (response.status === 200) {
+					console.log(response.data);
+					getAllTodo({ apiToken: token });
+				}
+			})
+			.catch((error) => {
+				console.log(`error code: ${error.response.status}`);
+				console.dir(error.response.data);
+			});
+	}
+
+	function deleteTodo({ apiToken = token, todo }: TodoUpdateInterface): void {
+		axios
+			.delete(`http://localhost:80/todo/${todo.id}`, {
+				headers: {
+					Authorization: `Bearer ${apiToken}`,
 				},
 			})
 			.then((response) => {
@@ -386,6 +403,7 @@ function App() {
 						categoryList={categories}
 						statusList={status}
 						onTodoUpdate={updateTodo}
+						onTodoDelete={deleteTodo}
 					/>
 
 					<Button type="button" variant="contained" onClick={handleOpen}>

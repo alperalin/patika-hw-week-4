@@ -1,5 +1,5 @@
 // Imports
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
 	Box,
 	List,
@@ -11,7 +11,8 @@ import {
 	Select,
 	MenuItem,
 	SelectChangeEvent,
-	Checkbox,
+	Button,
+	Alert,
 } from '@mui/material';
 
 // Interface
@@ -27,6 +28,7 @@ interface TodoListProps {
 	categoryList: Category[];
 	statusList: Status[];
 	onTodoUpdate: ({ apiToken, todo }: TodoUpdateInterface) => void;
+	onTodoDelete: ({ apiToken, todo }: TodoUpdateInterface) => void;
 }
 
 function TodoList({
@@ -34,21 +36,79 @@ function TodoList({
 	categoryList,
 	statusList,
 	onTodoUpdate,
+	onTodoDelete,
 }: TodoListProps) {
-	const [categorySelect, setCategorySelect] = useState<string>('');
-	const [statusSelect, setStatusSelect] = useState<string>('');
+	//States
+	const [categorySelect, setCategorySelect] = useState<any>({});
+	const [statusSelect, setStatusSelect] = useState<any>({});
+	const [showAlert, setShowAlert] = useState<any>({});
 
-	const handleCategorySelectChange = async (
+	// Functions
+	function handleCategorySelectChange(
 		event: SelectChangeEvent,
 		todo: TodoInterface
-	) => {
-		// todo.categoryId = parseInt(event.target.value);
-		// onTodoUpdate({ todo });
-	};
+	) {
+		const name = event.target.name;
+		const value = event.target.value;
 
-	// const handleStatusChange = (event: SelectChangeEvent) => {
-	// 	setStatusSelect(event.target.value as string);
-	// };
+		setCategorySelect((prev: any) => ({
+			...prev,
+			[name]: value,
+		}));
+
+		setStatusSelect((prev: any) => ({
+			...prev,
+			[name]: '',
+		}));
+
+		todo.categoryId = parseInt(value);
+		todo.statusId = -1;
+	}
+
+	function handleStatusSelectChange(
+		event: SelectChangeEvent,
+		todo: TodoInterface
+	) {
+		const name = event.target.name;
+		const value = event.target.value;
+
+		setStatusSelect((prev: any) => ({
+			...prev,
+			[name]: value,
+		}));
+
+		todo.statusId = parseInt(value);
+
+		if (todo.statusId !== -1) {
+			setShowAlert((prev: any) => ({
+				...prev,
+				[todo.id]: false,
+			}));
+		}
+	}
+
+	function handleUpdate(
+		event: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+		todo: TodoInterface
+	) {
+		if (todo.categoryId !== -1 && todo.statusId !== -1) {
+			setShowAlert((prev: any) => ({
+				...prev,
+				[todo.id]: false,
+			}));
+
+			onTodoUpdate({ todo });
+		} else {
+			setShowAlert((prev: any) => ({
+				...prev,
+				[todo.id]: true,
+			}));
+		}
+	}
+
+	function handleDelete(todo: TodoInterface) {
+		onTodoDelete({ todo });
+	}
 
 	return (
 		<Box component="div" sx={{ width: '100%', mb: 10 }}>
@@ -58,17 +118,21 @@ function TodoList({
 
 			<List sx={{ width: '100%', maxWidth: 800 }}>
 				{todoList.map((todo) => (
-					<ListItem key={todo.id}>
-						<Checkbox value={todo.done} readOnly={true} />
+					<ListItem sx={{ flexWrap: 'wrap', mt: 2, mb: 2 }} key={todo.id}>
 						<ListItemText primary={todo.title} />
 						<FormControl required sx={{ m: 1, minWidth: 120 }}>
-							<InputLabel id="demo-simple-select-label">Kategori</InputLabel>
+							<InputLabel id="category-select">Kategori</InputLabel>
 							<Select
-								labelId="demo-simple-select-label"
-								id="categorySelect"
-								label="Kategori Sec"
+								labelId="category-select"
+								label="Kategori"
+								id={todo.categoryId.toString()}
+								name={todo.id.toString()}
 								onChange={(event) => handleCategorySelectChange(event, todo)}
-								defaultValue={`${todo.categoryId}`}
+								value={
+									categorySelect.length
+										? categorySelect[todo.id].value
+										: todo.categoryId.toString()
+								}
 							>
 								{categoryList.length &&
 									categoryList.map((category) => (
@@ -82,12 +146,18 @@ function TodoList({
 							</Select>
 						</FormControl>
 						<FormControl required sx={{ m: 1, minWidth: 120 }}>
-							<InputLabel id="demo-simple-select-label">Statu</InputLabel>
+							<InputLabel id="statu-select">Statu</InputLabel>
 							<Select
-								labelId="demo-simple-select-label"
-								id="statuSelect"
-								label="Statu Sec"
-								defaultValue={todo.statusId ? todo.statusId.toString() : ''}
+								labelId="status-select"
+								label="Statu"
+								id={todo.statusId.toString()}
+								name={todo.id.toString()}
+								onChange={(event) => handleStatusSelectChange(event, todo)}
+								value={
+									statusSelect.length
+										? statusSelect[todo.id].value
+										: todo.statusId.toString()
+								}
 							>
 								{statusList &&
 									statusList
@@ -100,8 +170,35 @@ function TodoList({
 												{filteredStatus.title}
 											</MenuItem>
 										))}
+								<MenuItem value={-1}>None</MenuItem>
 							</Select>
 						</FormControl>
+						<Button
+							type="button"
+							variant="contained"
+							sx={{ mr: 1 }}
+							onClick={(event) => handleUpdate(event, todo)}
+						>
+							Guncelle
+						</Button>
+						<Button
+							type="button"
+							variant="outlined"
+							onClick={() => handleDelete(todo)}
+						>
+							Sil
+						</Button>
+						{showAlert[todo.id] ? (
+							<Alert
+								sx={{ width: '100%', mt: 1 }}
+								key={todo.id}
+								severity="error"
+							>
+								Kategori ve statu seciniz
+							</Alert>
+						) : (
+							''
+						)}
 					</ListItem>
 				))}
 			</List>
