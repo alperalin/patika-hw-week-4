@@ -72,8 +72,8 @@ export interface Status extends StatusCommon {
 	id: number;
 }
 
-interface StatusAddProps extends StatusCommon {
-	apiToken: string;
+export interface StatusAddProps extends StatusCommon {
+	apiToken?: string;
 }
 
 export interface StatusGetProps {
@@ -86,6 +86,19 @@ export interface StatusGetAllProps {
 	categories: Category[];
 }
 
+export interface StatusUpdateProps {
+	apiToken?: string;
+	id: number;
+	title: string;
+	color: string;
+	categoryId: number;
+}
+
+export interface StatusDeleteProps {
+	apiToken?: string;
+	id: number;
+}
+
 export interface Login {
 	username: string;
 	password: string;
@@ -96,7 +109,7 @@ export interface Register extends Login {
 }
 
 export interface Pages {
-	currentPage: 'Login' | 'App' | 'CategoryEdit' | 'StatusEdit';
+	currentPage: 'Login' | 'App' | 'CategoryEdit' | 'StatusEdit' | null;
 	prevPage: 'Login' | 'App' | 'CategoryEdit' | 'StatusEdit' | null;
 }
 
@@ -110,7 +123,7 @@ function App() {
 	const [todoList, setTodoList] = useState<TodoInterface[]>([]);
 	const [categories, setCategories] = useState<Category[]>([]);
 	const [status, setStatus] = useState<Status[]>([]);
-	const [editCategory, setEditCategory] = useState<number | null>(null);
+	const [editCategory, setEditCategory] = useState<Category | null>(null);
 
 	useEffect(() => {
 		if (token) {
@@ -295,7 +308,7 @@ function App() {
 		title,
 		categoryId,
 		color,
-		apiToken,
+		apiToken = token,
 	}: StatusAddProps): void {
 		const data = JSON.stringify({ title, categoryId, color });
 
@@ -348,6 +361,51 @@ function App() {
 		receivedStatus.forEach((status) =>
 			setStatus((prev) => [...prev, ...status])
 		);
+	}
+
+	function updateStatus({
+		apiToken = token,
+		id,
+		title,
+		color,
+		categoryId,
+	}: StatusUpdateProps): void {
+		const data = JSON.stringify({ title, categoryId, color });
+
+		axios
+			.put(`http://localhost:80/status/${id}`, data, {
+				headers: {
+					Authorization: `Bearer ${apiToken}`,
+					'Content-Type': 'application/json',
+				},
+			})
+			.then((response) => {
+				if (response.status === 200) {
+					getAllStatus({ apiToken: token, categories });
+				}
+			})
+			.catch((error) => {
+				console.log(`error code: ${error.response.status}`);
+				console.dir(error.response.data);
+			});
+	}
+
+	function deleteStatus({ apiToken = token, id }: StatusDeleteProps): void {
+		axios
+			.delete(`http://localhost:80/status/${id}`, {
+				headers: {
+					Authorization: `Bearer ${apiToken}`,
+				},
+			})
+			.then((response) => {
+				if (response.status === 200) {
+					getAllStatus({ apiToken: token, categories });
+				}
+			})
+			.catch((error) => {
+				console.log(`error code: ${error.response.status}`);
+				console.dir(error.response.data);
+			});
 	}
 
 	// Todo Operations
@@ -492,7 +550,31 @@ function App() {
 		);
 	} else if (token && pages.currentPage === 'StatusEdit') {
 		// STATU DUZENLE
-		return <StatusPage />;
+		return (
+			<>
+				{pages.prevPage ? (
+					<Button
+						onClick={() => {
+							const curPage = pages.currentPage;
+							const prePage = pages.prevPage;
+
+							setPages({ currentPage: prePage, prevPage: curPage });
+						}}
+					>
+						Go Back
+					</Button>
+				) : (
+					''
+				)}
+				<StatusPage
+					categoryItem={editCategory}
+					onAddStatus={addStatus}
+					onGetStatus={getStatus}
+					onUpdateStatus={updateStatus}
+					onDeleteStatus={deleteStatus}
+				/>
+			</>
+		);
 	} else {
 		// LOGIN REGISTER
 		return <LoginRegister onLogin={handleLogin} onRegister={handleRegister} />;

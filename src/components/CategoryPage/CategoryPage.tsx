@@ -70,8 +70,6 @@ function CategoryPage({
 		// Formun varsayilan aksiyonu durduruluyor
 		event.preventDefault();
 
-		console.log('hello');
-
 		// Input bir degiskene ataniyor
 		const updatedCategoryId = parseInt(
 			event.currentTarget.elements.categoryInput.id
@@ -182,8 +180,7 @@ function CategoryPage({
 									sx={{ mr: 1 }}
 									variant="contained"
 									color="secondary"
-									onClick={() => onStatusEdit(category.id)}
-									// onClick={() => console.log('hello')}
+									onClick={() => onStatusEdit(category)}
 								>
 									Statuler Duzenle
 								</Button>
