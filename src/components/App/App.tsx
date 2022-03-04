@@ -5,6 +5,7 @@ import axios from 'axios';
 // Components
 import LoginRegister from '../Login/LoginRegister';
 import Todo from '../Todo/Todo';
+import Filter from '../Filter/Filter';
 import TodoList from '../TodoList/TodoList';
 import CategoryPage from '../CategoryPage/CategoryPage';
 import StatusPage from '../StatusPage/StatusPage';
@@ -125,6 +126,7 @@ function App() {
 	const [status, setStatus] = useState<Status[]>([]);
 	const [editCategory, setEditCategory] = useState<Category | null>(null);
 
+	// Token alindigindan categoriler ve todolar sunucudan cekiliyor
 	useEffect(() => {
 		if (token) {
 			getCategories({ apiToken: token });
@@ -494,6 +496,17 @@ function App() {
 			});
 	}
 
+	// Filter Operations
+	function filter(action: boolean, categoryId?: number, statusId?: number) {
+		// if (action)
+		// 	return todoList.filter(
+		// 		(item) => item.categoryId === categoryId && item.statusId === statusId
+		// 	);
+		// return todoList;
+
+		console.log(action, categoryId, statusId);
+	}
+
 	// App Ekrani Donuluyor
 	if (token && pages.currentPage === 'App') {
 		// MAIN PAGE
@@ -518,6 +531,14 @@ function App() {
 					onCategoryChange={getStatus}
 				/>
 
+				{/* Filter */}
+				<Filter
+					onSubmit={filter}
+					categoryList={categories}
+					onCategoryChange={getStatus}
+				/>
+
+				{/* Todolist */}
 				<TodoList
 					todoList={todoList}
 					categoryList={categories}
@@ -526,6 +547,7 @@ function App() {
 					onTodoDelete={deleteTodo}
 				/>
 
+				{/* Change category */}
 				<Button
 					type="button"
 					variant="contained"
