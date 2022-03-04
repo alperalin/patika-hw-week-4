@@ -112,7 +112,14 @@ function LoginRegister({ onLogin, onRegister }: LoginRegisterProps) {
 
 	// Element
 	return (
-		<>
+		<Box
+			sx={{
+				maxWidth: '100%',
+				width: '100%',
+				p: 2,
+				boxSizing: 'border-box',
+			}}
+		>
 			<Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
 				<Tabs
 					value={tabValue}
@@ -183,7 +190,7 @@ function LoginRegister({ onLogin, onRegister }: LoginRegisterProps) {
 					</Button>
 				</form>
 			</TabPanel>
-		</>
+		</Box>
 	);
 }
 

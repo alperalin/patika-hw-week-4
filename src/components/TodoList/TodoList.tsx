@@ -63,6 +63,13 @@ function TodoList({
 
 		todo.categoryId = parseInt(value);
 		todo.statusId = -1;
+
+		if (todo.categoryId !== -1) {
+			setShowAlert((prev: any) => ({
+				...prev,
+				[todo.id]: false,
+			}));
+		}
 	}
 
 	function handleStatusSelectChange(
@@ -125,13 +132,15 @@ function TodoList({
 							<Select
 								labelId="category-select"
 								label="Kategori"
-								id={todo.categoryId.toString()}
+								id={todo.categoryId ? todo.categoryId.toString() : '-1'}
 								name={todo.id.toString()}
 								onChange={(event) => handleCategorySelectChange(event, todo)}
 								value={
 									categorySelect.length
 										? categorySelect[todo.id].value
-										: todo.categoryId.toString()
+										: todo.categoryId
+										? todo.categoryId.toString()
+										: -1
 								}
 							>
 								{categoryList.length &&
@@ -143,6 +152,7 @@ function TodoList({
 											{category.title}
 										</MenuItem>
 									))}
+								<MenuItem value={-1}>None</MenuItem>
 							</Select>
 						</FormControl>
 						<FormControl required sx={{ m: 1, minWidth: 120 }}>
@@ -150,13 +160,15 @@ function TodoList({
 							<Select
 								labelId="status-select"
 								label="Statu"
-								id={todo.statusId.toString()}
+								id={todo.statusId ? todo.statusId.toString() : '-1'}
 								name={todo.id.toString()}
 								onChange={(event) => handleStatusSelectChange(event, todo)}
 								value={
 									statusSelect.length
 										? statusSelect[todo.id].value
-										: todo.statusId.toString()
+										: todo.statusId
+										? todo.statusId.toString()
+										: -1
 								}
 							>
 								{statusList &&

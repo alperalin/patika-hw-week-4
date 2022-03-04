@@ -6,21 +6,11 @@ import axios from 'axios';
 import LoginRegister from '../Login/LoginRegister';
 import Todo from '../Todo/Todo';
 import TodoList from '../TodoList/TodoList';
+import CategoryPage from '../CategoryPage/CategoryPage';
+import StatusPage from '../StatusPage/StatusPage';
 
 // MUI
-import { Box, Typography, Button, Modal } from '@mui/material';
-
-const style = {
-	position: 'absolute' as 'absolute',
-	top: '50%',
-	left: '50%',
-	transform: 'translate(-50%, -50%)',
-	width: 400,
-	bgcolor: 'background.paper',
-	border: '2px solid #000',
-	boxShadow: 24,
-	p: 4,
-};
+import { Box, Typography, Button } from '@mui/material';
 
 export interface TodoInterface {
 	id: number;
@@ -56,11 +46,20 @@ export interface Category {
 }
 
 interface CategoryOprProps {
-	apiToken: string;
+	apiToken?: string;
 }
 
-interface CategoryAddProps extends CategoryOprProps {
+export interface CategoryAddProps extends CategoryOprProps {
 	title: Category['title'];
+}
+
+export interface CategoryUpdateProps extends CategoryOprProps {
+	id: Category['id'];
+	title: Category['title'];
+}
+
+export interface CategoryDeleteProps extends CategoryOprProps {
+	id: Category['id'];
 }
 
 interface StatusCommon {
@@ -96,13 +95,22 @@ export interface Register extends Login {
 	passwordConfirm: string;
 }
 
+export interface Pages {
+	currentPage: 'Login' | 'App' | 'CategoryEdit' | 'StatusEdit';
+	prevPage: 'Login' | 'App' | 'CategoryEdit' | 'StatusEdit' | null;
+}
+
 function App() {
 	// STATES
 	const [token, setToken] = useState<string>(() => getCookie('token') || '');
+	const [pages, setPages] = useState<Pages>({
+		currentPage: 'App',
+		prevPage: null,
+	});
+	const [todoList, setTodoList] = useState<TodoInterface[]>([]);
 	const [categories, setCategories] = useState<Category[]>([]);
 	const [status, setStatus] = useState<Status[]>([]);
-	const [todoList, setTodoList] = useState<TodoInterface[]>([]);
-	const [open, setOpen] = useState(false);
+	const [editCategory, setEditCategory] = useState<number | null>(null);
 
 	useEffect(() => {
 		if (token) {
@@ -110,6 +118,21 @@ function App() {
 			getAllTodo({ apiToken: token });
 		}
 	}, [token]);
+
+	useEffect(() => {
+		if (editCategory) {
+			setPages({
+				currentPage: 'StatusEdit',
+				prevPage: 'CategoryEdit',
+			});
+		}
+	}, [editCategory]);
+
+	useEffect(() => {
+		if (pages) {
+			console.log(pages);
+		}
+	}, [pages]);
 
 	// FUNCTIONS
 	function getCookie(cname: string): string {
@@ -128,15 +151,55 @@ function App() {
 		return '';
 	}
 
-	const handleCategorySubmit = (event: React.SyntheticEvent) => {
-		event.preventDefault();
-	};
+	// Handle Login
+	function handleLogin(formData: Login): void {
+		const data = JSON.stringify(formData);
+		axios
+			.post('http://localhost:80/auth/login', data, {
+				headers: {
+					'Content-Type': 'application/json',
+				},
+			})
+			.then((response) => {
+				if (response.status === 200) {
+					const apiToken = response.data.token;
+					document.cookie = `token=${apiToken}`;
+					setToken(apiToken);
+					setPages({ currentPage: 'App', prevPage: 'Login' });
+				}
+			})
+			.catch((error) => {
+				console.log(`error code: ${error.response.status}`);
+				console.dir(error.response.data);
+			});
+	}
 
-	const handleOpen = () => setOpen(true);
-	const handleClose = () => setOpen(false);
+	// Handle Register
+	function handleRegister(formData: Register): void {
+		const data = JSON.stringify(formData);
+		axios
+			.post('http://localhost:80/auth/register', data, {
+				headers: {
+					'Content-Type': 'application/json',
+				},
+			})
+			.then((response) => {
+				if (response.status === 200) {
+					const apiToken = response.data.token;
+					document.cookie = `token=${apiToken}`;
+					setToken(apiToken);
+					setPages({ currentPage: 'App', prevPage: 'Login' });
+					addCategory({ apiToken, title: 'General' });
+				}
+			})
+			.catch((error) => {
+				console.log(`error code: ${error.response.status}`);
+				console.dir(error.response.data);
+			});
+	}
 
 	// Category Operations
-	function addCategory({ apiToken, title }: CategoryAddProps): void {
+	function addCategory({ apiToken = token, title }: CategoryAddProps): void {
 		const data = JSON.stringify({ title });
 
 		axios
@@ -164,7 +227,7 @@ function App() {
 			});
 	}
 
-	function getCategories({ apiToken }: CategoryOprProps): void {
+	function getCategories({ apiToken = token }: CategoryOprProps): void {
 		axios
 			.get('http://localhost:80/category', {
 				headers: {
@@ -176,6 +239,49 @@ function App() {
 					const categories: Category[] = response.data;
 					setCategories(categories);
 					getAllStatus({ categories });
+				}
+			})
+			.catch((error) => {
+				console.log(`error code: ${error.response.status}`);
+				console.dir(error.response.data);
+			});
+	}
+
+	function updateCategory({
+		apiToken = token,
+		id,
+		title,
+	}: CategoryUpdateProps): void {
+		const data = JSON.stringify({ title });
+
+		axios
+			.put(`http://localhost:80/category/${id}`, data, {
+				headers: {
+					Authorization: `Bearer ${apiToken}`,
+					'Content-Type': 'application/json',
+				},
+			})
+			.then((response) => {
+				if (response.status === 200) {
+					getCategories({ apiToken: token });
+				}
+			})
+			.catch((error) => {
+				console.log(`error code: ${error.response.status}`);
+				console.dir(error.response.data);
+			});
+	}
+
+	function deleteCategory({ apiToken = token, id }: CategoryDeleteProps): void {
+		axios
+			.delete(`http://localhost:80/category/${id}`, {
+				headers: {
+					Authorization: `Bearer ${apiToken}`,
+				},
+			})
+			.then((response) => {
+				if (response.status === 200) {
+					getCategories({ apiToken: token });
 				}
 			})
 			.catch((error) => {
@@ -242,51 +348,6 @@ function App() {
 		receivedStatus.forEach((status) =>
 			setStatus((prev) => [...prev, ...status])
 		);
-	}
-
-	// Handle Login
-	function handleLogin(formData: Login): void {
-		const data = JSON.stringify(formData);
-		axios
-			.post('http://localhost:80/auth/login', data, {
-				headers: {
-					'Content-Type': 'application/json',
-				},
-			})
-			.then((response) => {
-				if (response.status === 200) {
-					const apiToken = response.data.token;
-					document.cookie = `token=${apiToken}`;
-					setToken(apiToken);
-				}
-			})
-			.catch((error) => {
-				console.log(`error code: ${error.response.status}`);
-				console.dir(error.response.data);
-			});
-	}
-
-	// Handle Register
-	function handleRegister(formData: Register): void {
-		const data = JSON.stringify(formData);
-		axios
-			.post('http://localhost:80/auth/register', data, {
-				headers: {
-					'Content-Type': 'application/json',
-				},
-			})
-			.then((response) => {
-				if (response.status === 200) {
-					const apiToken = response.data.token;
-					document.cookie = `token=${apiToken}`;
-					setToken(apiToken);
-					addCategory({ apiToken, title: 'General' });
-				}
-			})
-			.catch((error) => {
-				console.log(`error code: ${error.response.status}`);
-				console.dir(error.response.data);
-			});
 	}
 
 	// Todo Operations
@@ -375,109 +436,67 @@ function App() {
 			});
 	}
 
-	return (
-		<Box
-			sx={{
-				maxWidth: '100%',
-				width: '100%',
-				p: 2,
-				boxSizing: 'border-box',
-			}}
-		>
-			{token ? (
-				<>
-					{/* // APP */}
-					<Typography variant="h1" component="h1" gutterBottom>
-						TodoList App
-					</Typography>
+	// App Ekrani Donuluyor
+	if (token && pages.currentPage === 'App') {
+		// MAIN PAGE
+		return (
+			<Box
+				sx={{
+					maxWidth: '100%',
+					width: '100%',
+					p: 2,
+					boxSizing: 'border-box',
+				}}
+			>
+				{/* // APP */}
+				<Typography variant="h1" component="h1" gutterBottom>
+					TodoList App
+				</Typography>
 
-					{/* Todo */}
-					<Todo
-						onSubmit={addTodo}
-						categoryList={categories}
-						onCategoryChange={getStatus}
-					/>
+				{/* Todo */}
+				<Todo
+					onSubmit={addTodo}
+					categoryList={categories}
+					onCategoryChange={getStatus}
+				/>
 
-					<TodoList
-						todoList={todoList}
-						categoryList={categories}
-						statusList={status}
-						onTodoUpdate={updateTodo}
-						onTodoDelete={deleteTodo}
-					/>
+				<TodoList
+					todoList={todoList}
+					categoryList={categories}
+					statusList={status}
+					onTodoUpdate={updateTodo}
+					onTodoDelete={deleteTodo}
+				/>
 
-					<Button type="button" variant="contained" onClick={handleOpen}>
-						Kategorileri duzenle
-					</Button>
-
-					{/* Kategorileri Duzenleme Modali */}
-					{/* <Modal
-						open={open}
-						onClose={handleClose}
-						aria-labelledby="modal-modal-title"
-						aria-describedby="modal-modal-description"
-					>
-						<Box sx={style}>
-							<Typography id="modal-modal-title" variant="h6" component="h2">
-								Kategorileri Duzenle
-							</Typography>
-							<Typography id="modal-modal-description" sx={{ mt: 2 }}>
-								Asagida kategorileri duzenleyebilirsiniz.
-							</Typography>
-							<Box
-								component="form"
-								sx={{
-									'& .MuiTextField-root': { m: 1, width: '25ch' },
-								}}
-								noValidate
-								autoComplete="off"
-								onSubmit={handleCategorySubmit}
-							>
-								<TextField
-									id="todoInput"
-									label="Todo Metni"
-									placeholder="Todo Metni"
-									onChange={(event: any) => {
-										setCategoryText(event.target.value);
-									}}
-									value={categoryText}
-									required
-								/>
-								<br />
-								<Button type="submit" variant="contained">
-									Kategori Ekle
-								</Button>
-							</Box>
-
-							<h5>Kategoriler</h5>
-							<Box
-								sx={{
-									'& .MuiTextField-root': { m: 1, width: '25ch' },
-								}}
-							>
-								<List
-									sx={{
-										width: '100%',
-										maxWidth: 360,
-										bgcolor: 'background.paper',
-									}}
-								>
-									{/* {categories.map((category) => (
-										<ListItem key={category.id}>
-											<ListItemText primary={`${category.name}`} />
-										</ListItem>
-									))} */}
-					{/* </List>
-							</Box>
-						</Box> */}
-					{/* </Modal> */}
-				</>
-			) : (
-				// LOGIN REGISTER
-				<LoginRegister onLogin={handleLogin} onRegister={handleRegister} />
-			)}
-		</Box>
-	);
+				<Button
+					type="button"
+					variant="contained"
+					onClick={() =>
+						setPages({ currentPage: 'CategoryEdit', prevPage: 'App' })
+					}
+				>
+					Kategorileri duzenle
+				</Button>
+			</Box>
+		);
+	} else if (token && pages.currentPage === 'CategoryEdit') {
+		// KATEGORI DUZENLE
+		return (
+			<CategoryPage
+				onNewCategorySubmit={addCategory}
+				onUpdateCategorySubmit={updateCategory}
+				onDeleteCategorySubmit={deleteCategory}
+				onStatusEdit={setEditCategory}
+				categoriesList={categories}
+			/>
+		);
+	} else if (token && pages.currentPage === 'StatusEdit') {
+		// STATU DUZENLE
+		return <StatusPage />;
+	} else {
+		// LOGIN REGISTER
+		return <LoginRegister onLogin={handleLogin} onRegister={handleRegister} />;
+	}
 }
 
 export default App;
