@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 // Components
+import Header from '../Header/Header';
 import LoginRegister from '../Login/LoginRegister';
 import Todo from '../Todo/Todo';
 import Filter from '../Filter/Filter';
@@ -497,14 +498,31 @@ function App() {
 	}
 
 	// Filter Operations
-	function filter(action: boolean, categoryId?: number, statusId?: number) {
-		// if (action)
-		// 	return todoList.filter(
-		// 		(item) => item.categoryId === categoryId && item.statusId === statusId
-		// 	);
-		// return todoList;
+	function filter(categoryId: number, statusId: number) {
+		const params = Object.fromEntries(
+			Object.entries({ categoryId: categoryId, statusId: statusId }).filter(
+				([key, value]) => value
+			)
+		);
 
-		console.log(action, categoryId, statusId);
+		axios
+			.get('http://localhost:80/todo', {
+				params: params,
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			})
+			.then(async (response) => {
+				if (response.status === 200) {
+					console.log(response.data);
+					const receivedTodoList: TodoInterface[] = response.data;
+					setTodoList(receivedTodoList);
+				}
+			})
+			.catch((error) => {
+				console.log(`error code: ${error.response.status}`);
+				console.dir(error.response.data);
+			});
 	}
 
 	// App Ekrani Donuluyor

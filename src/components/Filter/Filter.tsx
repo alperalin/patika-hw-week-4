@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 
 // Interfaces
-import { Category, TodoAddInterface, Status, StatusGetProps } from '../App/App';
+import { Category, Status, StatusGetProps } from '../App/App';
 
 // TypeScript currentTarget icindeki elements'i tanimadigi
 // icin elements'i tanimlayan bir interface olusturuldu
@@ -25,7 +25,7 @@ interface UserFormElements extends HTMLFormElement {
 
 // Props
 interface TodoProps {
-	onSubmit: (action: boolean, categoryId?: number, statusId?: number) => void;
+	onSubmit: (categoryId: number, statusId: number) => void;
 	categoryList: Category[];
 	onCategoryChange: ({ apiToken, categoryId }: StatusGetProps) => any;
 }
@@ -60,7 +60,7 @@ function Filter({ onSubmit, categoryList, onCategoryChange }: TodoProps) {
 		event.preventDefault();
 
 		// Onsubmit ile filter degerleri gonderiliyor
-		onSubmit(true, parseInt(categorySelect), parseInt(statusSelect));
+		onSubmit(parseInt(categorySelect), parseInt(statusSelect));
 	}
 
 	function handleClear(
@@ -70,7 +70,7 @@ function Filter({ onSubmit, categoryList, onCategoryChange }: TodoProps) {
 		event.stopPropagation();
 
 		// Onsubmit ile filter temizleniyor
-		onSubmit(false);
+		onSubmit(0, 0);
 
 		// Filter Select elemanlari temizleniyor.
 		setCategorySelect('');
@@ -80,7 +80,7 @@ function Filter({ onSubmit, categoryList, onCategoryChange }: TodoProps) {
 	return (
 		<Box component="div" sx={{ width: '100%', mt: 10, mb: 10 }}>
 			<Typography variant="h2" gutterBottom component="h1">
-				Filtrele (CALISMIYOR)
+				Filtrele
 			</Typography>
 			<Box
 				component="form"
