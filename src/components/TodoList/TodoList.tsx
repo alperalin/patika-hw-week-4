@@ -1,5 +1,5 @@
 // Imports
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
 	Box,
 	List,
@@ -7,7 +7,6 @@ import {
 	ListItemText,
 	FormControl,
 	InputLabel,
-	Typography,
 	Select,
 	MenuItem,
 	SelectChangeEvent,
@@ -21,14 +20,14 @@ import {
 	TodoUpdateInterface,
 	Category,
 	Status,
-} from '../App/App';
+} from '../../utils/types';
 
 interface TodoListProps {
 	todoList: TodoInterface[];
 	categoryList: Category[];
 	statusList: Status[];
-	onTodoUpdate: ({ apiToken, todo }: TodoUpdateInterface) => void;
-	onTodoDelete: ({ apiToken, todo }: TodoUpdateInterface) => void;
+	onTodoUpdate: ({ todo }: TodoUpdateInterface) => void;
+	onTodoDelete: ({ todo }: TodoUpdateInterface) => void;
 }
 
 function TodoList({
@@ -118,16 +117,12 @@ function TodoList({
 	}
 
 	return (
-		<Box component="div" sx={{ width: '100%', mb: 10 }}>
-			<Typography variant="h2" gutterBottom component="h1">
-				Todo Listesi
-			</Typography>
-
-			<List sx={{ width: '100%', maxWidth: 800 }}>
+		<Box component="div" sx={{ width: '100%', mb: 2 }}>
+			<List sx={{ width: '100%' }}>
 				{todoList.map((todo) => (
 					<ListItem sx={{ flexWrap: 'wrap', mt: 2, mb: 2 }} key={todo.id}>
-						<ListItemText primary={todo.title} />
-						<FormControl required sx={{ m: 1, minWidth: 120 }}>
+						<ListItemText primary={todo.title} sx={{ width: '33ch' }} />
+						<FormControl required sx={{ m: 1, width: '20ch' }}>
 							<InputLabel id="category-select">Kategori</InputLabel>
 							<Select
 								labelId="category-select"
@@ -155,7 +150,7 @@ function TodoList({
 								<MenuItem value={-1}>None</MenuItem>
 							</Select>
 						</FormControl>
-						<FormControl required sx={{ m: 1, minWidth: 120 }}>
+						<FormControl required sx={{ m: 1, width: '20ch' }}>
 							<InputLabel id="statu-select">Statu</InputLabel>
 							<Select
 								labelId="status-select"

@@ -12,7 +12,12 @@ import MenuItem from '@mui/material/MenuItem';
 import InputLabel from '@mui/material/InputLabel';
 
 // Interfaces
-import { Category, TodoAddInterface, Status, StatusGetProps } from '../App/App';
+import {
+	Category,
+	TodoAddInterface,
+	Status,
+	StatusGetProps,
+} from '../../utils/types';
 
 // TypeScript currentTarget icindeki elements'i tanimadigi
 // icin elements'i tanimlayan bir interface olusturuldu
@@ -28,7 +33,7 @@ interface UserFormElements extends HTMLFormElement {
 interface TodoProps {
 	onSubmit: (todo: TodoAddInterface) => void;
 	categoryList: Category[];
-	onCategoryChange: ({ apiToken, categoryId }: StatusGetProps) => any;
+	onCategoryChange: ({ categoryId }: StatusGetProps) => any;
 }
 
 // Component
@@ -48,7 +53,9 @@ function Todo({ onSubmit, categoryList, onCategoryChange }: TodoProps) {
 		});
 
 		// Gelen statuleri state icerisine at.
-		setStatusList(receivedStatus);
+		if (receivedStatus.length) {
+			setStatusList(receivedStatus);
+		}
 	}
 
 	// Handle Status Selection
@@ -77,19 +84,19 @@ function Todo({ onSubmit, categoryList, onCategoryChange }: TodoProps) {
 	// Return Element
 	return (
 		<Box component="div" sx={{ width: '100%', mb: 10 }}>
-			<Typography variant="h2" gutterBottom component="h1">
+			<Typography component="h2" fontSize="1.6rem" m={1} gutterBottom>
 				Todo Ekle
 			</Typography>
 			<form autoComplete="off" onSubmit={handleSubmit}>
 				<TextField
-					sx={{ width: '33ch', m: 1 }}
+					sx={{ width: '60ch', m: 1 }}
 					id="todoInput"
 					name="todoInput"
 					label="Todo Metni"
 					placeholder="Todo Metni"
 					required
 				/>
-				<FormControl required sx={{ m: 1, minWidth: 120 }}>
+				<FormControl required sx={{ m: 1, width: '20ch' }}>
 					<InputLabel id="demo-simple-select-label">Kategori</InputLabel>
 					<Select
 						labelId="demo-simple-select-label"
@@ -106,7 +113,7 @@ function Todo({ onSubmit, categoryList, onCategoryChange }: TodoProps) {
 							))}
 					</Select>
 				</FormControl>
-				<FormControl required sx={{ m: 1, minWidth: 120 }}>
+				<FormControl required sx={{ m: 1, width: '20ch' }}>
 					<InputLabel id="demo-simple-select-label">Statu</InputLabel>
 					<Select
 						labelId="demo-simple-select-label"
@@ -123,8 +130,11 @@ function Todo({ onSubmit, categoryList, onCategoryChange }: TodoProps) {
 							))}
 					</Select>
 				</FormControl>
-				<br />
-				<Button sx={{ ml: 1, mr: 1 }} type="submit" variant="contained">
+				<Button
+					sx={{ width: '25ch', ml: 1, mr: 1, fontSize: '1rem' }}
+					type="submit"
+					variant="contained"
+				>
 					Ekle
 				</Button>
 			</form>

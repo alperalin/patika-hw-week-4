@@ -12,108 +12,30 @@ import CategoryPage from '../CategoryPage/CategoryPage';
 import StatusPage from '../StatusPage/StatusPage';
 
 // MUI
-import { Box, Typography, Button } from '@mui/material';
+import { Box, Button, Grid } from '@mui/material';
 
-export interface TodoInterface {
-	id: number;
-	userId: number;
-	title: string;
-	categoryId: number;
-	statusId: number;
-	updatedAt: string;
-	createdAt: string;
-}
+// API
+import { service } from '../../utils/service';
 
-export interface TodoAddInterface {
-	title: string;
-	categoryId: number;
-	statusId: number;
-}
-
-export interface TodoGetInterface {
-	apiToken: string;
-}
-
-export interface TodoUpdateInterface {
-	apiToken?: string;
-	todo: TodoInterface;
-}
-
-export interface Category {
-	id: number;
-	userId: number;
-	title: string;
-	createdAt: string;
-	updatedAt: string;
-}
-
-interface CategoryOprProps {
-	apiToken?: string;
-}
-
-export interface CategoryAddProps extends CategoryOprProps {
-	title: Category['title'];
-}
-
-export interface CategoryUpdateProps extends CategoryOprProps {
-	id: Category['id'];
-	title: Category['title'];
-}
-
-export interface CategoryDeleteProps extends CategoryOprProps {
-	id: Category['id'];
-}
-
-interface StatusCommon {
-	title: string;
-	categoryId: number;
-	color: string;
-}
-
-export interface Status extends StatusCommon {
-	id: number;
-}
-
-export interface StatusAddProps extends StatusCommon {
-	apiToken?: string;
-}
-
-export interface StatusGetProps {
-	apiToken?: string;
-	categoryId: number;
-}
-
-export interface StatusGetAllProps {
-	apiToken?: string;
-	categories: Category[];
-}
-
-export interface StatusUpdateProps {
-	apiToken?: string;
-	id: number;
-	title: string;
-	color: string;
-	categoryId: number;
-}
-
-export interface StatusDeleteProps {
-	apiToken?: string;
-	id: number;
-}
-
-export interface Login {
-	username: string;
-	password: string;
-}
-
-export interface Register extends Login {
-	passwordConfirm: string;
-}
-
-export interface Pages {
-	currentPage: 'Login' | 'App' | 'CategoryEdit' | 'StatusEdit' | null;
-	prevPage: 'Login' | 'App' | 'CategoryEdit' | 'StatusEdit' | null;
-}
+// Types
+import {
+	Login,
+	Register,
+	Pages,
+	TodoInterface,
+	TodoAddInterface,
+	TodoUpdateInterface,
+	Category,
+	CategoryAddProps,
+	CategoryUpdateProps,
+	CategoryDeleteProps,
+	Status,
+	StatusUpdateProps,
+	StatusDeleteProps,
+	StatusGetProps,
+	StatusGetAllProps,
+	StatusCommon,
+} from '../../utils/types';
 
 function App() {
 	// STATES
@@ -130,8 +52,15 @@ function App() {
 	// Token alindigindan categoriler ve todolar sunucudan cekiliyor
 	useEffect(() => {
 		if (token) {
-			getCategories({ apiToken: token });
-			getAllTodo({ apiToken: token });
+			// Diger api cagrilarinda kullanilmasi icin
+			// sunucunun dondugu token degeri
+			// axios'un defaults degerlerine ekleniyor.
+			service.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+			getCategories();
+			getAllTodo();
+		} else {
+			service.defaults.headers.common['Authorization'] = '';
+			handlePageChange({ currentPage: 'Login', prevPage: null });
 		}
 	}, [token]);
 
@@ -144,13 +73,8 @@ function App() {
 		}
 	}, [editCategory]);
 
-	useEffect(() => {
-		if (pages) {
-			console.log(pages);
-		}
-	}, [pages]);
-
 	// FUNCTIONS
+	// Get Cookie
 	function getCookie(cname: string): string {
 		let name = cname + '=';
 		let decodedCookie = decodeURIComponent(document.cookie);
@@ -167,21 +91,39 @@ function App() {
 		return '';
 	}
 
+	// Delete token
+	function deleteToken({ currentPage, prevPage }: Pages): void {
+		// Sayfa Login olarak degistiriliyor
+		handlePageChange({ currentPage, prevPage });
+
+		// Token state'i siliniyor.
+		setToken('');
+
+		// Token cookie'si siliniyor
+		document.cookie = 'token=; Max-Age=-99999999;';
+	}
+
 	// Handle Login
-	function handleLogin(formData: Login): void {
-		const data = JSON.stringify(formData);
-		axios
-			.post('http://localhost:80/auth/login', data, {
-				headers: {
-					'Content-Type': 'application/json',
-				},
-			})
+	function handleLogin(data: Login): void {
+		// API call
+		service
+			.post('/auth/login', data)
 			.then((response) => {
 				if (response.status === 200) {
-					const apiToken = response.data.token;
-					document.cookie = `token=${apiToken}`;
-					setToken(apiToken);
-					setPages({ currentPage: 'App', prevPage: 'Login' });
+					// Diger api cagrilarinda kullanilmasi icin
+					// sunucunun dondugu token degeri
+					// axios'un defaults degerlerine ekleniyor.
+					service.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+					// Token cookie'ye kayit ediliyor.
+					document.cookie = `token=${response.data.token}`;
+
+					// Sunucudan gelen token verisi
+					// token state'ne ekleniyor
+					setToken(response.data.token);
+
+					// Gosterilen sayfa App olarak degistiriliyor
+					handlePageChange({ currentPage: 'App', prevPage: 'Login' });
 				}
 			})
 			.catch((error) => {
@@ -191,21 +133,26 @@ function App() {
 	}
 
 	// Handle Register
-	function handleRegister(formData: Register): void {
-		const data = JSON.stringify(formData);
-		axios
-			.post('http://localhost:80/auth/register', data, {
-				headers: {
-					'Content-Type': 'application/json',
-				},
-			})
+	function handleRegister(data: Register): void {
+		// API call
+		service
+			.post('/auth/register', data)
 			.then((response) => {
 				if (response.status === 200) {
-					const apiToken = response.data.token;
-					document.cookie = `token=${apiToken}`;
-					setToken(apiToken);
-					setPages({ currentPage: 'App', prevPage: 'Login' });
-					addCategory({ apiToken, title: 'General' });
+					// Diger api cagrilarinda kullanilmasi icin
+					// sunucunun dondugu token degeri
+					// axios'un defaults degerlerine ekleniyor.
+					service.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+					// Token cookie'ye kayit ediliyor.
+					document.cookie = `token=${response.data.token}`;
+
+					// Sunucudan gelen token verisi
+					// token state'ne ekleniyor
+					setToken(response.data.token);
+
+					// Gosterilen sayfa App olarak degistiriliyor
+					handlePageChange({ currentPage: 'App', prevPage: 'Login' });
 				}
 			})
 			.catch((error) => {
@@ -215,26 +162,14 @@ function App() {
 	}
 
 	// Category Operations
-	function addCategory({ apiToken = token, title }: CategoryAddProps): void {
-		const data = JSON.stringify({ title });
-
-		axios
-			.post('http://localhost:80/category', data, {
-				headers: {
-					Authorization: `Bearer ${apiToken}`,
-					'Content-Type': 'application/json',
-				},
-			})
+	function addCategory(data: CategoryAddProps): void {
+		// API call
+		service
+			.post('/category', data)
 			.then((response) => {
 				if (response.status === 200) {
 					const category: Category = response.data;
 					setCategories((prev) => [...prev, category]);
-					addStatus({
-						apiToken,
-						title: 'Backlog',
-						categoryId: category.id,
-						color: 'purple',
-					});
 				}
 			})
 			.catch((error) => {
@@ -243,13 +178,10 @@ function App() {
 			});
 	}
 
-	function getCategories({ apiToken = token }: CategoryOprProps): void {
-		axios
-			.get('http://localhost:80/category', {
-				headers: {
-					Authorization: `Bearer ${apiToken}`,
-				},
-			})
+	function getCategories(): void {
+		// API call
+		service
+			.get('/category')
 			.then((response) => {
 				if (response.status === 200) {
 					const categories: Category[] = response.data;
@@ -263,23 +195,13 @@ function App() {
 			});
 	}
 
-	function updateCategory({
-		apiToken = token,
-		id,
-		title,
-	}: CategoryUpdateProps): void {
-		const data = JSON.stringify({ title });
-
-		axios
-			.put(`http://localhost:80/category/${id}`, data, {
-				headers: {
-					Authorization: `Bearer ${apiToken}`,
-					'Content-Type': 'application/json',
-				},
-			})
+	function updateCategory({ id, title }: CategoryUpdateProps): void {
+		// API call
+		service
+			.put(`/category/${id}`, { title })
 			.then((response) => {
 				if (response.status === 200) {
-					getCategories({ apiToken: token });
+					getCategories();
 				}
 			})
 			.catch((error) => {
@@ -288,16 +210,13 @@ function App() {
 			});
 	}
 
-	function deleteCategory({ apiToken = token, id }: CategoryDeleteProps): void {
-		axios
-			.delete(`http://localhost:80/category/${id}`, {
-				headers: {
-					Authorization: `Bearer ${apiToken}`,
-				},
-			})
+	function deleteCategory({ id }: CategoryDeleteProps): void {
+		// API Call
+		service
+			.delete(`/category/${id}`)
 			.then((response) => {
 				if (response.status === 200) {
-					getCategories({ apiToken: token });
+					getCategories();
 				}
 			})
 			.catch((error) => {
@@ -307,42 +226,13 @@ function App() {
 	}
 
 	// Status Operations
-	function addStatus({
-		title,
-		categoryId,
-		color,
-		apiToken = token,
-	}: StatusAddProps): void {
-		const data = JSON.stringify({ title, categoryId, color });
-
-		axios
-			.post('http://localhost:80/status', data, {
-				headers: {
-					Authorization: `Bearer ${apiToken}`,
-					'Content-Type': 'application/json',
-				},
-			})
+	async function addStatus(data: StatusCommon) {
+		// API call
+		const status: Status = await service
+			.post('/status', data)
 			.then((response) => {
 				if (response.status === 200) {
-					const status: Status = response.data;
-					setStatus((prev) => [...prev, status]);
-				}
-			})
-			.catch((error) => {
-				console.log(`error code: ${error.response.status}`);
-				console.dir(error.response.data);
-			});
-	}
-
-	async function getStatus({ apiToken = token, categoryId }: StatusGetProps) {
-		const status: Status[] = await axios
-			.get(`http://localhost:80/status?categoryId=${categoryId}`, {
-				headers: {
-					Authorization: `Bearer ${apiToken}`,
-				},
-			})
-			.then((response) => {
-				if (response.status === 200) {
+					setStatus((prev) => [...prev, response.data]);
 					return response.data;
 				}
 			})
@@ -353,10 +243,24 @@ function App() {
 		return status;
 	}
 
-	async function getAllStatus({
-		apiToken = token,
-		categories,
-	}: StatusGetAllProps) {
+	async function getStatus(data: StatusGetProps) {
+		// API call
+		const status: Status[] = await service
+			.get('/status', { params: data })
+			.then((response) => {
+				if (response.status === 200) {
+					return response.data;
+				}
+			})
+			.catch((error) => {
+				console.log(`error code: ${error.response.status}`);
+				console.dir(error.response.data);
+			});
+
+		return status;
+	}
+
+	async function getAllStatus({ categories }: StatusGetAllProps) {
 		const receivedStatus = await Promise.all(
 			categories.map((category) => getStatus({ categoryId: category.id }))
 		);
@@ -367,7 +271,6 @@ function App() {
 	}
 
 	function updateStatus({
-		apiToken = token,
 		id,
 		title,
 		color,
@@ -375,16 +278,12 @@ function App() {
 	}: StatusUpdateProps): void {
 		const data = JSON.stringify({ title, categoryId, color });
 
-		axios
-			.put(`http://localhost:80/status/${id}`, data, {
-				headers: {
-					Authorization: `Bearer ${apiToken}`,
-					'Content-Type': 'application/json',
-				},
-			})
+		// API call
+		service
+			.put(`/status/${id}`, data)
 			.then((response) => {
 				if (response.status === 200) {
-					getAllStatus({ apiToken: token, categories });
+					getAllStatus({ categories });
 				}
 			})
 			.catch((error) => {
@@ -393,16 +292,13 @@ function App() {
 			});
 	}
 
-	function deleteStatus({ apiToken = token, id }: StatusDeleteProps): void {
-		axios
-			.delete(`http://localhost:80/status/${id}`, {
-				headers: {
-					Authorization: `Bearer ${apiToken}`,
-				},
-			})
+	function deleteStatus({ id }: StatusDeleteProps): void {
+		// API call
+		service
+			.delete(`/status/${id}`)
 			.then((response) => {
 				if (response.status === 200) {
-					getAllStatus({ apiToken: token, categories });
+					getAllStatus({ categories });
 				}
 			})
 			.catch((error) => {
@@ -412,15 +308,10 @@ function App() {
 	}
 
 	// Todo Operations
-	function addTodo(todoData: TodoAddInterface): void {
-		const data = JSON.stringify(todoData);
-		axios
-			.post('http://localhost:80/todo', data, {
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: `Bearer ${token}`,
-				},
-			})
+	function addTodo(data: TodoAddInterface): void {
+		// API call
+		service
+			.post('/todo', data)
 			.then((response) => {
 				if (response.status === 200) {
 					const todo: TodoInterface = response.data;
@@ -433,24 +324,19 @@ function App() {
 			});
 	}
 
-	function updateTodo({ apiToken = token, todo }: TodoUpdateInterface): void {
+	function updateTodo({ todo }: TodoUpdateInterface): void {
 		const data = JSON.stringify({
 			title: todo.title,
 			categoryId: todo.categoryId,
 			statusId: todo.statusId,
 		});
 
-		axios
-			.put(`http://localhost:80/todo/${todo.id}`, data, {
-				headers: {
-					Authorization: `Bearer ${apiToken}`,
-					'Content-Type': 'application/json',
-				},
-			})
+		// API call
+		service
+			.put(`/todo/${todo.id}`, data)
 			.then((response) => {
 				if (response.status === 200) {
-					console.log(response.data);
-					getAllTodo({ apiToken: token });
+					getAllTodo();
 				}
 			})
 			.catch((error) => {
@@ -459,17 +345,13 @@ function App() {
 			});
 	}
 
-	function deleteTodo({ apiToken = token, todo }: TodoUpdateInterface): void {
-		axios
-			.delete(`http://localhost:80/todo/${todo.id}`, {
-				headers: {
-					Authorization: `Bearer ${apiToken}`,
-				},
-			})
+	function deleteTodo({ todo }: TodoUpdateInterface): void {
+		// API call
+		service
+			.delete(`/todo/${todo.id}`)
 			.then((response) => {
 				if (response.status === 200) {
-					console.log(response.data);
-					getAllTodo({ apiToken: token });
+					getAllTodo();
 				}
 			})
 			.catch((error) => {
@@ -478,14 +360,11 @@ function App() {
 			});
 	}
 
-	function getAllTodo({ apiToken }: TodoGetInterface): void {
-		axios
-			.get('http://localhost:80/todo', {
-				headers: {
-					Authorization: `Bearer ${apiToken}`,
-				},
-			})
-			.then(async (response) => {
+	function getAllTodo(): void {
+		// API call
+		service
+			.get('/todo')
+			.then((response) => {
 				if (response.status === 200) {
 					const receivedTodoList: TodoInterface[] = response.data;
 					setTodoList(receivedTodoList);
@@ -514,7 +393,6 @@ function App() {
 			})
 			.then(async (response) => {
 				if (response.status === 200) {
-					console.log(response.data);
 					const receivedTodoList: TodoInterface[] = response.data;
 					setTodoList(receivedTodoList);
 				}
@@ -525,87 +403,102 @@ function App() {
 			});
 	}
 
+	// Page Change
+	function handlePageChange({ currentPage, prevPage }: Pages) {
+		if (currentPage === 'CategoryEdit') setEditCategory(null);
+		setPages({ currentPage, prevPage });
+	}
+
 	// App Ekrani Donuluyor
 	if (token && pages.currentPage === 'App') {
 		// MAIN PAGE
 		return (
-			<Box
-				sx={{
-					maxWidth: '100%',
-					width: '100%',
-					p: 2,
-					boxSizing: 'border-box',
-				}}
-			>
-				{/* // APP */}
-				<Typography variant="h1" component="h1" gutterBottom>
-					TodoList App
-				</Typography>
-
-				{/* Todo */}
-				<Todo
-					onSubmit={addTodo}
-					categoryList={categories}
-					onCategoryChange={getStatus}
+			<>
+				<Header
+					pages={pages}
+					onBackButtonClick={handlePageChange}
+					onLogoutButtonClick={deleteToken}
 				/>
-
-				{/* Filter */}
-				<Filter
-					onSubmit={filter}
-					categoryList={categories}
-					onCategoryChange={getStatus}
-				/>
-
-				{/* Todolist */}
-				<TodoList
-					todoList={todoList}
-					categoryList={categories}
-					statusList={status}
-					onTodoUpdate={updateTodo}
-					onTodoDelete={deleteTodo}
-				/>
-
-				{/* Change category */}
-				<Button
-					type="button"
-					variant="contained"
-					onClick={() =>
-						setPages({ currentPage: 'CategoryEdit', prevPage: 'App' })
-					}
+				<Box
+					sx={{
+						maxWidth: '100%',
+						width: '100%',
+						p: 2,
+						boxSizing: 'border-box',
+						mt: 2,
+						mb: 2,
+					}}
 				>
-					Kategorileri duzenle
-				</Button>
-			</Box>
+					<Grid container spacing={2} direction="row" justifyContent="center">
+						<Grid item xs={2}></Grid>
+						<Grid sx={{ display: 'flex', flexWrap: 'wrap' }} item xs={8}>
+							{/* Todo */}
+							<Todo
+								onSubmit={addTodo}
+								categoryList={categories}
+								onCategoryChange={getStatus}
+							/>
+
+							{/* Filter */}
+							<Filter
+								onSubmit={filter}
+								categoryList={categories}
+								onCategoryChange={getStatus}
+							/>
+
+							{/* Todolist */}
+							<TodoList
+								todoList={todoList}
+								categoryList={categories}
+								statusList={status}
+								onTodoUpdate={updateTodo}
+								onTodoDelete={deleteTodo}
+							/>
+
+							{/* Change category */}
+							<Button
+								sx={{ margin: '0 auto' }}
+								type="button"
+								variant="contained"
+								onClick={() =>
+									setPages({ currentPage: 'CategoryEdit', prevPage: 'App' })
+								}
+							>
+								Kategorileri duzenle
+							</Button>
+						</Grid>
+						<Grid item xs={2}></Grid>
+					</Grid>
+				</Box>
+			</>
 		);
 	} else if (token && pages.currentPage === 'CategoryEdit') {
 		// KATEGORI DUZENLE
 		return (
-			<CategoryPage
-				onNewCategorySubmit={addCategory}
-				onUpdateCategorySubmit={updateCategory}
-				onDeleteCategorySubmit={deleteCategory}
-				onStatusEdit={setEditCategory}
-				categoriesList={categories}
-			/>
+			<>
+				<Header
+					pages={pages}
+					onBackButtonClick={handlePageChange}
+					onLogoutButtonClick={deleteToken}
+				/>
+				<CategoryPage
+					onNewCategorySubmit={addCategory}
+					onUpdateCategorySubmit={updateCategory}
+					onDeleteCategorySubmit={deleteCategory}
+					onStatusEdit={setEditCategory}
+					categoriesList={categories}
+				/>
+			</>
 		);
 	} else if (token && pages.currentPage === 'StatusEdit') {
 		// STATU DUZENLE
 		return (
 			<>
-				{pages.prevPage ? (
-					<Button
-						onClick={() => {
-							const curPage = pages.currentPage;
-							const prePage = pages.prevPage;
-
-							setPages({ currentPage: prePage, prevPage: curPage });
-						}}
-					>
-						Go Back
-					</Button>
-				) : (
-					''
-				)}
+				<Header
+					pages={pages}
+					onBackButtonClick={handlePageChange}
+					onLogoutButtonClick={deleteToken}
+				/>
 				<StatusPage
 					categoryItem={editCategory}
 					onAddStatus={addStatus}
@@ -617,7 +510,16 @@ function App() {
 		);
 	} else {
 		// LOGIN REGISTER
-		return <LoginRegister onLogin={handleLogin} onRegister={handleRegister} />;
+		return (
+			<>
+				<Header
+					pages={pages}
+					onBackButtonClick={handlePageChange}
+					onLogoutButtonClick={deleteToken}
+				/>
+				<LoginRegister onLogin={handleLogin} onRegister={handleRegister} />;
+			</>
+		);
 	}
 }
 

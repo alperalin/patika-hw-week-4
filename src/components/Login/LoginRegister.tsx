@@ -1,6 +1,6 @@
 // Imports
 import React, { useState } from 'react';
-import { Login, Register } from '../App/App';
+import { Login, Register } from '../../utils/types';
 
 // MUIs
 import Box from '@mui/material/Box';
@@ -8,6 +8,7 @@ import TextField from '@mui/material/TextField';
 import { Button } from '@mui/material';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
+import { maxWidth } from '@mui/system';
 
 // Interfaces
 // TypeScript currentTarget icindeki elements'i tanimadigi
@@ -114,9 +115,10 @@ function LoginRegister({ onLogin, onRegister }: LoginRegisterProps) {
 	return (
 		<Box
 			sx={{
-				maxWidth: '100%',
+				maxWidth: 800,
 				width: '100%',
 				p: 2,
+				m: '0 auto',
 				boxSizing: 'border-box',
 			}}
 		>
@@ -125,15 +127,20 @@ function LoginRegister({ onLogin, onRegister }: LoginRegisterProps) {
 					value={tabValue}
 					onChange={handleTabChange}
 					aria-label="Login/Register Page"
+					centered
 				>
 					<Tab label="Login" {...a11yProps(0)} />
 					<Tab label="Register" {...a11yProps(1)} />
 				</Tabs>
 			</Box>
 			<TabPanel value={tabValue} index={0}>
-				<form autoComplete="off" onSubmit={handleLoginSubmit}>
+				<form
+					autoComplete="off"
+					onSubmit={handleLoginSubmit}
+					style={{ maxWidth: 400, margin: '0 auto' }}
+				>
 					<TextField
-						sx={{ display: 'flex', width: '25ch', mb: 1 }}
+						sx={{ display: 'flex', width: '100%', mb: 1 }}
 						id="usernameInput"
 						name="usernameInput"
 						label="Kullanici Ismi"
@@ -141,7 +148,7 @@ function LoginRegister({ onLogin, onRegister }: LoginRegisterProps) {
 						required
 					/>
 					<TextField
-						sx={{ display: 'flex', width: '25ch', mb: 1 }}
+						sx={{ display: 'flex', width: '100%', mb: 1 }}
 						id="passwordInput"
 						name="passwordInput"
 						label="Sifre"
@@ -156,9 +163,13 @@ function LoginRegister({ onLogin, onRegister }: LoginRegisterProps) {
 				</form>
 			</TabPanel>
 			<TabPanel value={tabValue} index={1}>
-				<form autoComplete="off" onSubmit={handleRegisterSubmit}>
+				<form
+					autoComplete="off"
+					onSubmit={handleRegisterSubmit}
+					style={{ maxWidth: 400, margin: '0 auto' }}
+				>
 					<TextField
-						sx={{ display: 'flex', width: '25ch', mb: 1 }}
+						sx={{ display: 'flex', width: '100%', mb: 1 }}
 						id="usernameInput"
 						name="usernameInput"
 						label="Kullanici Ismi"
@@ -166,7 +177,7 @@ function LoginRegister({ onLogin, onRegister }: LoginRegisterProps) {
 						required
 					/>
 					<TextField
-						sx={{ display: 'flex', width: '25ch', mb: 1 }}
+						sx={{ display: 'flex', width: '100%', mb: 1 }}
 						id="passwordInput"
 						name="passwordInput"
 						label="Sifre"
@@ -176,7 +187,7 @@ function LoginRegister({ onLogin, onRegister }: LoginRegisterProps) {
 						required
 					/>
 					<TextField
-						sx={{ display: 'flex', width: '25ch', mb: 1 }}
+						sx={{ display: 'flex', width: '100%', mb: 1 }}
 						id="passwordConfirmInput"
 						name="passwordConfirmInput"
 						label="Sifre Tekrari"

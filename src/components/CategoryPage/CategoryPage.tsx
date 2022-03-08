@@ -9,6 +9,7 @@ import {
 	List,
 	ListItem,
 	TextField,
+	Grid,
 } from '@mui/material';
 
 // interface
@@ -17,17 +18,13 @@ import {
 	CategoryAddProps,
 	CategoryUpdateProps,
 	CategoryDeleteProps,
-} from '../App/App';
+} from '../../utils/types';
 
 interface CategoryPageProps {
 	categoriesList: Category[];
-	onNewCategorySubmit: ({ apiToken, title }: CategoryAddProps) => void;
-	onUpdateCategorySubmit: ({
-		apiToken,
-		id,
-		title,
-	}: CategoryUpdateProps) => void;
-	onDeleteCategorySubmit: ({ apiToken, id }: CategoryDeleteProps) => void;
+	onNewCategorySubmit: ({ title }: CategoryAddProps) => void;
+	onUpdateCategorySubmit: ({ id, title }: CategoryUpdateProps) => void;
+	onDeleteCategorySubmit: ({ id }: CategoryDeleteProps) => void;
 	onStatusEdit: any;
 }
 
@@ -103,101 +100,107 @@ function CategoryPage({
 				maxWidth: '100%',
 				width: '100%',
 				p: 2,
+				mt: 2,
+				mb: 2,
 				boxSizing: 'border-box',
 			}}
 		>
-			{/* // KATEGORI DUZENLE */}
-			<Typography variant="h1" component="h1" gutterBottom>
-				Kategorileri Duzenle
-			</Typography>
-			<Box component="div" sx={{ width: '100%', mb: 10 }}>
-				<Typography variant="h2" gutterBottom component="h1">
-					Kategori Ekle
-				</Typography>
+			<Grid container spacing={2} direction="row" justifyContent="center">
+				<Grid item xs={2}></Grid>
+				<Grid sx={{ display: 'flex', flexWrap: 'wrap' }} item xs={8}>
+					<Typography component="h2" fontSize="1.6rem" m={1} gutterBottom>
+						Kategorileri Duzenle
+					</Typography>
+					<Box component="div" sx={{ width: '100%', mb: 5 }}>
+						<Typography component="h3" fontSize="1.2rem" m={1} gutterBottom>
+							Kategori Ekle
+						</Typography>
 
-				<Box
-					component="form"
-					sx={{
-						display: 'flex',
-						flexWrap: 'wrap',
-						alignItems: 'center',
-						width: '100%',
-						mb: 10,
-					}}
-					autoComplete="off"
-					onSubmit={(event: any) => handleNewCategorySubmit(event)}
-				>
-					<TextField
-						sx={{ width: '33ch', m: 1 }}
-						id="newCategoryInput"
-						name="newCategoryInput"
-						label="Yeni Kategori Adi"
-						placeholder="Yeni Kategori Adi"
-						required
-					/>
-					<Button sx={{ ml: 1, mr: 1 }} type="submit" variant="contained">
-						Kategori Ekle
-					</Button>
-				</Box>
-			</Box>
+						<Box
+							component="form"
+							sx={{
+								display: 'flex',
+								flexWrap: 'wrap',
+								alignItems: 'center',
+								width: '100%',
+							}}
+							autoComplete="off"
+							onSubmit={(event: any) => handleNewCategorySubmit(event)}
+						>
+							<TextField
+								sx={{ width: '50ch', m: 1 }}
+								id="newCategoryInput"
+								name="newCategoryInput"
+								label="Yeni Kategori Adi"
+								placeholder="Yeni Kategori Adi"
+								required
+							/>
+							<Button sx={{ ml: 1, mr: 1 }} type="submit" variant="contained">
+								Kategori Ekle
+							</Button>
+						</Box>
+					</Box>
 
-			<Box component="div" sx={{ width: '100%', mb: 10 }}>
-				<Typography variant="h2" component="h2" gutterBottom>
-					Kategorileri Listesi
-				</Typography>
+					<Box component="div" sx={{ width: '100%', mb: 5 }}>
+						<Typography component="h2" fontSize="1.6rem" m={1} gutterBottom>
+							Kategorileri Listesi
+						</Typography>
 
-				<List sx={{ width: '100%', maxWidth: 800 }}>
-					{categoriesList.map((category) => (
-						<ListItem key={category.id}>
-							<Box
-								component="form"
-								sx={{
-									display: 'flex',
-									flexWrap: 'wrap',
-									alignItems: 'center',
-									width: '100%',
-									mb: 2,
-								}}
-								autoComplete="off"
-								onSubmit={(event: any) => handleCategoryUpdateSubmit(event)}
-							>
-								<TextField
-									sx={{ width: '33ch', mr: 5 }}
-									id={category.id.toString()}
-									name="categoryInput"
-									label="Kategori Adi"
-									placeholder="Kategori Adi"
-									variant="standard"
-									required
-									defaultValue={category.title}
-								/>
+						<List sx={{ width: '100%' }}>
+							{categoriesList.map((category) => (
+								<ListItem key={category.id}>
+									<Box
+										component="form"
+										sx={{
+											display: 'flex',
+											flexWrap: 'wrap',
+											alignItems: 'center',
+											width: '100%',
+											mb: 2,
+										}}
+										autoComplete="off"
+										onSubmit={(event: any) => handleCategoryUpdateSubmit(event)}
+									>
+										<TextField
+											sx={{ width: '50ch', mr: 5 }}
+											id={category.id.toString()}
+											name="categoryInput"
+											label="Kategori Adi"
+											placeholder="Kategori Adi"
+											variant="standard"
+											required
+											defaultValue={category.title}
+										/>
 
-								<Button type="submit" variant="contained" sx={{ mr: 1 }}>
-									Guncelle
-								</Button>
-								<Button
-									type="button"
-									sx={{ mr: 1 }}
-									variant="contained"
-									color="secondary"
-									onClick={() => onStatusEdit(category)}
-								>
-									Statuler Duzenle
-								</Button>
-								<Button
-									type="button"
-									variant="outlined"
-									onClick={(event) =>
-										handleDeleteCategorySubmit(event, category.id)
-									}
-								>
-									Sil
-								</Button>
-							</Box>
-						</ListItem>
-					))}
-				</List>
-			</Box>
+										<Button type="submit" variant="contained" sx={{ mr: 1 }}>
+											Guncelle
+										</Button>
+										<Button
+											type="button"
+											sx={{ mr: 1 }}
+											variant="contained"
+											color="secondary"
+											onClick={() => onStatusEdit(category)}
+										>
+											Statuler Duzenle
+										</Button>
+										<Button
+											type="button"
+											variant="outlined"
+											onClick={(event) =>
+												handleDeleteCategorySubmit(event, category.id)
+											}
+										>
+											Sil
+										</Button>
+									</Box>
+								</ListItem>
+							))}
+						</List>
+					</Box>
+				</Grid>
+				<Grid item xs={2}></Grid>
+			</Grid>
 		</Box>
 	);
 }
