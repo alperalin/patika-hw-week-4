@@ -8,7 +8,6 @@ import TextField from '@mui/material/TextField';
 import { Button } from '@mui/material';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
-import { maxWidth } from '@mui/system';
 
 // Interfaces
 // TypeScript currentTarget icindeki elements'i tanimadigi
