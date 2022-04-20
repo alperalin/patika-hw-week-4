@@ -1,7 +1,5 @@
 # Patika HW4 - TodoApp
 
-## IN PROGRESS
-
 This is patika react bootcamp's week 4 homework.
 
 ## Getting Started with Create React App
